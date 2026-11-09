@@ -47,13 +47,13 @@ header{
  text-shadow:0 0 8px #c084fc;
 }
 
-.tools{display:flex;gap:5px}
+.tools{display:flex;gap:4px}
 
 .tools button{
  background:#35164f;color:#e9c5ff;
  border:1px solid #a855f7;
- padding:4px 9px;border-radius:6px;
- cursor:pointer;
+ padding:4px 8px;border-radius:6px;
+ cursor:pointer;font-size:12px;
 }
 
 .tools button:disabled{opacity:.5;cursor:not-allowed}
@@ -131,7 +131,6 @@ textarea:focus{
 
 button:disabled{opacity:.5}
 
-/* invisible restore hit-zone — bottom-right corner */
 .restore{
  pointer-events:auto;position:fixed;
  right:0;bottom:0;
@@ -157,16 +156,17 @@ button:disabled{opacity:.5}
 
 <section class="panel">
  <header>
-  <b class="title">✦ NURRY Wayground Ai</b>
+  <b class="title">✦ WAYGROUND AI</b>
   <div class="tools">
+   <button class="essay" title="Analisa soal esai di tab ini">📝</button>
    <button class="analyze" title="Analisa soal pilihan ganda di tab ini">🔍</button>
-   <button class="hide" title="Sembunyikan semua (tap pojok kanan bawah untuk munculkan)">−</button>
+   <button class="hide" title="Sembunyikan semua (tap pojok kanan bawah)">−</button>
    <button class="close" title="Tutup panel">×</button>
   </div>
  </header>
 
  <div class="body">
-  <div class="subtitle">CHEAT wayground • By Nurry</div>
+  <div class="subtitle">PURPLE CYBERPUNK • OPENROUTER</div>
 
   <div class="setting">
    <div class="line">
@@ -178,16 +178,14 @@ button:disabled{opacity:.5}
 
   <div class="chat">
    <div class="msg ai">
-    CHEAT ON🟢 | WAYGROUND AI ACTIVE
-    STATUS : ONLINE
-    UPTIME : -
-    Klik 🔍 untuk analisa soal pilihan ganda di tab ini.
+    Halo! ✦ Aku tutor belajar AI.
+    🔍 = analisa pilihan ganda, 📝 = analisa soal esai.
    </div>
   </div>
 
   <textarea placeholder="Tulis pertanyaan atau soal latihan..."></textarea>
 
-  <button class="send">✦ ANALISIS</button>
+  <button class="send">✦ KIRIM PESAN</button>
  </div>
 </section>
 
@@ -204,13 +202,13 @@ const input=$("textarea");
 const send=$(".send");
 const slider=$(".range");
 const analyzeBtn=$(".analyze");
+const essayBtn=$(".essay");
 
 let history=[];
 let lastHighlighted=[];
 
 function showPanel(){ panel.style.display="block"; }
 function hidePanel(){ panel.style.display="none"; }
-
 function hideAll(){
  panel.style.display="none";
  fab.style.display="none";
@@ -226,7 +224,6 @@ fab.onclick=()=>{
  if(panel.style.display==="block")hidePanel();
  else showPanel();
 };
-
 $(".hide").onclick=hideAll;
 $(".close").onclick=hidePanel;
 restore.onclick=showAll;
@@ -246,8 +243,23 @@ function addMessage(text,type){
  return el;
 }
 
+async function callAI(messages){
+ const response=await fetch(
+  "http://127.0.0.1:3000/api/chat",
+  {
+   method:"POST",
+   headers:{ "Content-Type":"application/json" },
+   body:JSON.stringify({ messages })
+  }
+ );
+ const data=await response.json();
+ if(!response.ok)throw new Error(data.error||"Request gagal");
+ if(!data.answer)throw new Error("Jawaban AI kosong");
+ return String(data.answer);
+}
+
 /* ═══════════════════════════════════════════════
-   SCRAPER — ambil soal + pilihan ganda dari tab
+   SCRAPER PILIHAN GANDA
    ═══════════════════════════════════════════════ */
 
 const norm=t=>String(t||"").replace(/\s+/g," ").trim();
@@ -281,10 +293,8 @@ function getRadioLabel(r){
 }
 
 function scrapeQuestion(){
- // ── 1. Radio-based multiple choice ──
  const radios=[...document.querySelectorAll('input[type="radio"]:not([disabled])')];
  if(radios.length>=2){
-  // cari grup radio pertama (2–10) di ancestor terdekat
   let group=[];
   let node=radios[0].parentElement;
   while(node){
@@ -296,7 +306,6 @@ function scrapeQuestion(){
 
   const options=group.map(r=>({text:getRadioLabel(r),el:r})).filter(o=>o.text);
   if(options.length>=2){
-   // cari teks soal: naik dari common ancestor, ambil sibling sebelumnya
    const common=commonAncestor(group);
    let q="";
    let cursor=common;
@@ -309,28 +318,22 @@ function scrapeQuestion(){
     cursor=cursor.parentElement;
    }
    if(!q){
-    const cands=document.querySelectorAll(
+    for(const c of document.querySelectorAll(
      'h1,h2,h3,h4,h5,[class*="question" i],[class*="prompt" i],[class*="stem" i],[data-testid*="question"]'
-    );
-    for(const c of cands){
+    )){
      const t=norm(c.innerText);
      if(t.length>5&&t.length<800){ q=t; break; }
     }
    }
-   if(q||options.length){
-    return {question:q||"(soal tidak terdeteksi otomatis)",options,kind:"radio"};
-   }
+   return {question:q||"(soal tidak terdeteksi)",options,kind:"radio"};
   }
  }
 
- // ── 2. Class-based heuristic ──
  const qSelectors=[
-  '[class*="question" i]','[class*="prompt" i]','[class*="stem" i]',
-  '.qtext','[data-testid*="question"]','[role="heading"]'
+  '[class*="question" i]','[class*="prompt" i]','[class*="stem" i]','.qtext','[data-testid*="question"]'
  ];
  const oSelectors=[
-  '[class*="answer" i]','[class*="option" i]','[class*="choice" i]',
-  '[role="radio"]','[role="option"]','[role="listitem"]'
+  '[class*="answer" i]','[class*="option" i]','[class*="choice" i]','[role="radio"]','[role="option"]'
  ];
 
  let qEl=null;
@@ -355,12 +358,87 @@ function scrapeQuestion(){
    kind:"class"
   };
  }
-
  return null;
 }
 
 /* ═══════════════════════════════════════════════
-   HIGHLIGHT + CLICK
+   SCRAPER SOAL ESAI
+   ═══════════════════════════════════════════════ */
+
+function scrapeEssay(){
+ // cari field jawaban aktif
+ const fields=[...document.querySelectorAll('textarea,[contenteditable="true"]')]
+  .filter(el=>{
+   try{
+    const r=el.getBoundingClientRect();
+    return r.width>0&&r.height>0&&!el.disabled&&!el.readOnly;
+   }catch(_){ return false; }
+  });
+
+ if(!fields.length)return null;
+
+ const field=fields.find(f=>f===document.activeElement)||fields[0];
+
+ // cari teks soal
+ let question="";
+
+ // strategi 1: selector class/heading, pilih yg paling dekat di ATAS field
+ const fieldRect=field.getBoundingClientRect();
+ let bestAbove=null;
+ let bestDist=Infinity;
+ const qSels=[
+  '[class*="question" i]','[class*="prompt" i]','[class*="stem" i]','[class*="qtext" i]',
+  '[data-testid*="question"]'
+ ];
+ for(const sel of qSels){
+  for(const el of document.querySelectorAll(sel)){
+   if(el.contains(field)||field.contains(el))continue;
+   const t=norm(el.innerText);
+   if(t.length<10||t.length>2000)continue;
+   const r=el.getBoundingClientRect();
+   if(r.height<=0)continue;
+   const dist=fieldRect.top-r.bottom;
+   if(dist>-30&&dist<bestDist){
+    bestAbove=el;
+    bestDist=dist;
+   }
+  }
+ }
+
+ if(bestAbove)question=norm(bestAbove.innerText);
+
+ // strategi 2: walk up dari field, sibling sebelumnya
+ if(!question){
+  let node=field;
+  let depth=0;
+  while(node&&depth<10&&!question){
+   let sib=node.previousElementSibling;
+   while(sib){
+    if(!sib.contains(field)){
+     const t=norm(sib.innerText);
+     if(t.length>10&&t.length<2000){ question=t; break; }
+    }
+    sib=sib.previousElementSibling;
+   }
+   node=node.parentElement;
+   depth++;
+  }
+ }
+
+ // strategi 3: heading terbesar di viewport atas
+ if(!question){
+  for(const h of document.querySelectorAll('h1,h2,h3,h4')){
+   const t=norm(h.innerText);
+   if(t.length>10&&t.length<2000){ question=t; break; }
+  }
+ }
+
+ if(!question)return null;
+ return {question,field};
+}
+
+/* ═══════════════════════════════════════════════
+   HIGHLIGHT + CLICK PILIHAN
    ═══════════════════════════════════════════════ */
 
 function clearHighlight(){
@@ -375,7 +453,6 @@ function clearHighlight(){
  }
  lastHighlighted=[];
 }
-
 function highlight(el){
  if(!el)return;
  try{
@@ -388,7 +465,6 @@ function highlight(el){
   el.scrollIntoView({behavior:"smooth",block:"center"});
  }catch(_){}
 }
-
 function clickOption(el){
  if(!el)return;
  try{
@@ -402,33 +478,28 @@ function clickOption(el){
 }
 
 /* ═══════════════════════════════════════════════
-   ANALISA SOAL
+   ANALISA PILIHAN GANDA
    ═══════════════════════════════════════════════ */
 
 async function analyze(){
  if(analyzeBtn.disabled)return;
-
  clearHighlight();
 
  const scraped=scrapeQuestion();
-
  if(!scraped||!scraped.options||scraped.options.length<2){
   addMessage(
-   "❌ Tidak bisa mendeteksi soal pilihan ganda di tab ini.\n"+
-   "Pastikan soal + pilihan jawaban sedang tampil di halaman.",
+   "❌ Tidak bisa mendeteksi soal pilihan ganda.\n"+
+   "Pastikan soal + pilihan jawaban sedang tampil.",
    "ai"
   );
   return;
  }
 
  const LETTERS="ABCDEFGHIJKLMNOPQRSTUVWXYZ";
- const optBlock=scraped.options
-  .map((o,i)=>`${LETTERS[i]}. ${o.text}`)
-  .join("\n");
+ const optBlock=scraped.options.map((o,i)=>`${LETTERS[i]}. ${o.text}`).join("\n");
 
  addMessage(
-  `🔍 Soal terdeteksi (${scraped.options.length} pilihan):\n\n`+
-  `${scraped.question}\n\n${optBlock}`,
+  `🔍 Soal terdeteksi (${scraped.options.length} pilihan):\n\n${scraped.question}\n\n${optBlock}`,
   "user"
  );
 
@@ -437,35 +508,16 @@ async function analyze(){
   `Tentukan jawaban yang paling benar.\n\n`+
   `SOAL:\n${scraped.question}\n\n`+
   `PILIHAN:\n${optBlock}\n\n`+
-  `Jawab dengan format persis seperti ini:\n`+
-  `JAWABAN: <satu huruf pilihan>\n`+
-  `ALASAN: <penjelasan singkat 1-2 kalimat>`;
+  `Jawab dengan format persis:\nJAWABAN: <satu huruf>\nALASAN: <1-2 kalimat>`;
 
  analyzeBtn.disabled=true;
  analyzeBtn.textContent="…";
-
  const waiting=addMessage("Menganalisa soal…","ai");
 
  try{
-  const response=await fetch(
-   "http://127.0.0.1:3000/api/chat",
-   {
-    method:"POST",
-    headers:{ "Content-Type":"application/json" },
-    body:JSON.stringify({
-     messages:[{ role:"user", content:prompt }]
-    })
-   }
-  );
-
-  const data=await response.json();
-  if(!response.ok)throw new Error(data.error||"Request gagal");
-  if(!data.answer)throw new Error("Jawaban AI kosong");
-
-  const ans=String(data.answer).trim();
+  const ans=await callAI([{ role:"user", content:prompt }]);
   waiting.textContent=ans;
 
-  // parse "JAWABAN: X"
   const m=ans.match(/JAWABAN\s*[:\-]\s*([A-Za-z])\b/);
   if(m){
    const letter=m[1].toUpperCase();
@@ -473,23 +525,19 @@ async function analyze(){
    if(idx>=0&&idx<scraped.options.length){
     const chosen=scraped.options[idx];
     highlight(chosen.el);
-
     const line=document.createElement("div");
     line.style.marginTop="6px";
-
     const btn=document.createElement("button");
     btn.className="pick";
     btn.textContent=`✓ Pilih ${letter}`;
     btn.onclick=()=>clickOption(chosen.el);
-
     line.appendChild(btn);
     waiting.appendChild(line);
     chat.scrollTop=chat.scrollHeight;
    }
   }
-
- }catch(error){
-  waiting.textContent="Error: "+error.message;
+ }catch(err){
+  waiting.textContent="Error: "+err.message;
  }finally{
   analyzeBtn.disabled=false;
   analyzeBtn.textContent="🔍";
@@ -498,6 +546,111 @@ async function analyze(){
 }
 
 analyzeBtn.onclick=analyze;
+
+/* ═══════════════════════════════════════════════
+   TULIS JAWABAN ESAI KE FIELD
+   ═══════════════════════════════════════════════ */
+
+function writeToField(field,text){
+ if(!field||!text)return false;
+ try{
+  field.focus();
+  if(field.tagName==="TEXTAREA"||field.tagName==="INPUT"){
+   const proto=field.tagName==="TEXTAREA"
+    ? window.HTMLTextAreaElement.prototype
+    : window.HTMLInputElement.prototype;
+   const setter=Object.getOwnPropertyDescriptor(proto,"value").set;
+   setter.call(field,text);
+   field.dispatchEvent(new Event("input",{bubbles:true}));
+   field.dispatchEvent(new Event("change",{bubbles:true}));
+   return true;
+  }
+  if(field.isContentEditable){
+   const sel=window.getSelection();
+   const range=document.createRange();
+   range.selectNodeContents(field);
+   sel.removeAllRanges();
+   sel.addRange(range);
+   let ok=false;
+   try{ ok=document.execCommand("insertText",false,text); }catch(_){}
+   if(!ok){
+    field.textContent=text;
+    field.dispatchEvent(new Event("input",{bubbles:true}));
+    field.dispatchEvent(new Event("change",{bubbles:true}));
+   }
+   return true;
+  }
+ }catch(_){}
+ return false;
+}
+
+/* ═══════════════════════════════════════════════
+   ANALISA SOAL ESAI
+   ═══════════════════════════════════════════════ */
+
+async function analyzeEssay(){
+ if(essayBtn.disabled)return;
+
+ const scraped=scrapeEssay();
+ if(!scraped){
+  addMessage(
+   "❌ Tidak bisa mendeteksi soal esai.\n"+
+   "Pastikan soal esai + kotak jawaban (textarea/contenteditable) terlihat di halaman.",
+   "ai"
+  );
+  return;
+ }
+
+ addMessage(
+  `📝 Soal esai terdeteksi:\n\n${scraped.question}`,
+  "user"
+ );
+
+ const prompt=
+  `Kamu tutor yang menjawab soal esai dengan lengkap dan tepat.\n\n`+
+  `SOAL ESAI:\n${scraped.question}\n\n`+
+  `Tulis jawaban esai yang baik, jelas, padat, dalam bahasa Indonesia.\n`+
+  `Panjang 2-4 paragraf sesuai kompleksitas soal.\n\n`+
+  `Format persis:\nJAWABAN ESAI:\n<isi jawaban lengkap>\n\nPOIN KUNCI:\n- <poin 1>\n- <poin 2>\n- <poin 3>`;
+
+ essayBtn.disabled=true;
+ essayBtn.textContent="…";
+ const waiting=addMessage("Menyusun jawaban esai…","ai");
+
+ try{
+  const ans=await callAI([{ role:"user", content:prompt }]);
+  waiting.textContent=ans;
+
+  // ekstrak bagian "JAWABAN ESAI:" untuk ditulis ke field
+  let essay=ans;
+  const m=ans.match(/JAWABAN ESAI\s*[:\-]?\s*([\s\S]*?)(?:\n\s*POIN KUNCI|$)/i);
+  if(m&&m[1].trim())essay=m[1].trim();
+
+  if(essay){
+   const line=document.createElement("div");
+   line.style.marginTop="6px";
+   const btn=document.createElement("button");
+   btn.className="pick";
+   btn.textContent="✎ Tulis ke jawaban";
+   btn.onclick=()=>{
+    const ok=writeToField(scraped.field,essay);
+    btn.textContent=ok?"✓ Terisi":"✗ Gagal isi";
+    btn.disabled=true;
+   };
+   line.appendChild(btn);
+   waiting.appendChild(line);
+   chat.scrollTop=chat.scrollHeight;
+  }
+ }catch(err){
+  waiting.textContent="Error: "+err.message;
+ }finally{
+  essayBtn.disabled=false;
+  essayBtn.textContent="📝";
+  chat.scrollTop=chat.scrollHeight;
+ }
+}
+
+essayBtn.onclick=analyzeEssay;
 
 /* ═══════════════════════════════════════════════
    CHAT BIASA
@@ -515,32 +668,16 @@ async function ask(){
 
  send.disabled=true;
  send.textContent="MENGHUBUNGKAN...";
-
  const waiting=addMessage("Sedang berpikir...","ai");
 
  try{
-  const response=await fetch(
-   "http://127.0.0.1:3000/api/chat",
-   {
-    method:"POST",
-    headers:{ "Content-Type":"application/json" },
-    body:JSON.stringify({ messages:history })
-   }
-  );
-
-  const data=await response.json();
-  if(!response.ok)throw new Error(data.error||"Request gagal");
-  if(!data.answer)throw new Error("Jawaban AI kosong");
-
-  waiting.textContent=data.answer;
-
-  history.push({ role:"assistant", content:data.answer });
+  const ans=await callAI(history);
+  waiting.textContent=ans;
+  history.push({ role:"assistant", content:ans });
   history=history.slice(-10);
-
- }catch(error){
-  waiting.textContent="Error: "+error.message;
+ }catch(err){
+  waiting.textContent="Error: "+err.message;
   history.pop();
-
  }finally{
   send.disabled=false;
   send.textContent="✦ KIRIM PESAN";
@@ -549,7 +686,6 @@ async function ask(){
 }
 
 send.onclick=ask;
-
 input.onkeydown=e=>{
  if(e.key==="Enter"&&(e.ctrlKey||e.metaKey)){
   e.preventDefault();
@@ -559,9 +695,7 @@ input.onkeydown=e=>{
 
 // DRAG PANEL
 const header=$("header");
-let dragging=false;
-let offsetX=0;
-let offsetY=0;
+let dragging=false,offsetX=0,offsetY=0;
 
 header.onpointerdown=e=>{
  if(e.target.closest("button"))return;
@@ -571,7 +705,6 @@ header.onpointerdown=e=>{
  offsetY=e.clientY-rect.top;
  header.setPointerCapture(e.pointerId);
 };
-
 header.onpointermove=e=>{
  if(!dragging)return;
  const maxX=window.innerWidth-panel.offsetWidth;
@@ -583,7 +716,6 @@ header.onpointermove=e=>{
  panel.style.right="auto";
  panel.style.bottom="auto";
 };
-
 header.onpointerup=()=>{ dragging=false; };
 header.onpointercancel=()=>{ dragging=false; };
 
