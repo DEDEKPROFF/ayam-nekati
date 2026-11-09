@@ -42,10 +42,7 @@ header{
  touch-action:none;border-bottom:1px solid #9333ea;
 }
 
-.title{
- color:#e9c5ff;font-weight:bold;
- text-shadow:0 0 8px #c084fc;
-}
+.title{color:#e9c5ff;font-weight:bold;text-shadow:0 0 8px #c084fc}
 
 .tools{display:flex;gap:5px}
 
@@ -64,20 +61,11 @@ header{
  display:flex;flex-direction:column;gap:8px;
 }
 
-.subtitle{
- color:#c084fc;font-size:9px;
- letter-spacing:1px;text-align:center;
-}
+.subtitle{color:#c084fc;font-size:9px;letter-spacing:1px;text-align:center}
 
-.setting{
- padding:8px;background:#241035;
- border:1px solid #6b21a8;border-radius:8px;
-}
+.setting{padding:8px;background:#241035;border:1px solid #6b21a8;border-radius:8px}
 
-.line{
- display:flex;justify-content:space-between;
- font-size:10px;
-}
+.line{display:flex;justify-content:space-between;font-size:10px}
 
 input{width:100%;accent-color:#c084fc}
 
@@ -92,20 +80,12 @@ input{width:100%;accent-color:#c084fc}
  line-height:1.45;max-width:95%;
 }
 
-.ai{
- background:#241035;border:1px solid #6b21a8;
- align-self:flex-start;
-}
-
-.user{
- background:#512080;border:1px solid #a855f7;
- align-self:flex-end;
-}
+.ai{background:#241035;border:1px solid #6b21a8;align-self:flex-start}
+.user{background:#512080;border:1px solid #a855f7;align-self:flex-end}
 
 .thumb{
  display:block;margin-top:6px;max-width:100%;
- max-height:120px;border-radius:6px;
- border:1px solid #a855f7;
+ max-height:120px;border-radius:6px;border:1px solid #a855f7;
 }
 
 textarea{
@@ -115,10 +95,7 @@ textarea{
  padding:9px;outline:none;
 }
 
-textarea:focus{
- border-color:#d8b4fe;
- box-shadow:0 0 10px #9333ea66;
-}
+textarea:focus{border-color:#d8b4fe;box-shadow:0 0 10px #9333ea66}
 
 .send{
  background:linear-gradient(90deg,#9333ea,#4c1d95);
@@ -138,13 +115,10 @@ textarea:focus{
 
 button:disabled{opacity:.5}
 
-/* ── SETTINGS PANEL ── */
 .settings{
- display:none;
- position:absolute;inset:0;z-index:9;
+ display:none;position:absolute;inset:0;z-index:9;
  background:rgba(10,5,20,calc(var(--op,1) * .96 + .04));
- padding:14px;gap:10px;
- flex-direction:column;
+ padding:14px;gap:10px;flex-direction:column;
  backdrop-filter:blur(4px);
 }
 .settings.on{display:flex}
@@ -164,7 +138,6 @@ button:disabled{opacity:.5}
 .settings .row button.ghost{background:#241035;border-color:#6b21a8}
 .settings .hint{font-size:9px;color:#a78bfa;line-height:1.5}
 
-/* ── LOCK ── */
 .lock{
  position:absolute;inset:0;z-index:10;
  background:rgba(10,5,20,calc(var(--op,1) * .92 + .08));
@@ -230,7 +203,7 @@ button:disabled{opacity:.5}
  <div class="body">
 
   <div class="lock">
-   <div class="lockTitle">✦ SecurityWayground Nurry/div>
+   <div class="lockTitle">✦ SecurityWayground Nurry</div>
    <div class="lockSub">MASUKKAN KEY UNTUK MEMBUKA</div>
    <input class="keyInput" type="password" placeholder="key…"
           autocomplete="off" spellcheck="false" autocapitalize="off" autocorrect="off" />
@@ -302,10 +275,7 @@ const closeSettings=$(".closeSettings");
 let history=[];
 let lastHighlighted=[];
 
-/* ═══════════════════════════════════════════════
-   KEY SYSTEM
-   ═══════════════════════════════════════════════ */
-
+/* ─── KEY SYSTEM ─── */
 const PASSWORD="voxel";
 const KEY_STORAGE="wgai_key_ok";
 
@@ -342,28 +312,20 @@ function updateLockState(){
 }
 updateLockState();
 
-/* ═══════════════════════════════════════════════
-   API URL (configurable)
-   ═══════════════════════════════════════════════ */
-
+/* ─── API URL ─── */
 const URL_KEY="wgai_api_url";
 const DEFAULT_URL="http://127.0.0.1:3000/api/chat";
-
 function getApiUrl(){
  try{ return localStorage.getItem(URL_KEY)||DEFAULT_URL; }
  catch(_){ return DEFAULT_URL; }
 }
 
-/* ═══════════════════════════════════════════════
-   PANEL SHOW / HIDE
-   ═══════════════════════════════════════════════ */
-
+/* ─── PANEL SHOW/HIDE ─── */
 function showPanel(){
  panel.style.display="block";
  if(!isUnlocked()){ setTimeout(()=>keyInput.focus(),60); }
 }
 function hidePanel(){ panel.style.display="none"; }
-
 function hideAll(){
  panel.style.display="none";
  fab.style.display="none";
@@ -390,10 +352,7 @@ slider.oninput=()=>{
  panel.style.setProperty("--op",1-n/100);
 };
 
-/* ═══════════════════════════════════════════════
-   SETTINGS PANEL
-   ═══════════════════════════════════════════════ */
-
+/* ─── SETTINGS ─── */
 settingsBtn.onclick=()=>{
  urlInput.value=getApiUrl();
  settings.classList.add("on");
@@ -401,16 +360,13 @@ settingsBtn.onclick=()=>{
 closeSettings.onclick=()=>settings.classList.remove("on");
 saveUrl.onclick=()=>{
  const v=urlInput.value.trim();
- if(!v){ return; }
+ if(!v)return;
  try{ localStorage.setItem(URL_KEY,v); }catch(_){}
  settings.classList.remove("on");
  addMessage("✓ URL backend disimpan: "+v,"ai");
 };
 
-/* ═══════════════════════════════════════════════
-   MESSAGES
-   ═══════════════════════════════════════════════ */
-
+/* ─── MESSAGES ─── */
 function addMessage(text,type){
  const el=document.createElement("div");
  el.className="msg "+type;
@@ -420,10 +376,7 @@ function addMessage(text,type){
  return el;
 }
 
-/* ═══════════════════════════════════════════════
-   FETCH AI — anti SyntaxError
-   ═══════════════════════════════════════════════ */
-
+/* ─── FETCH AI (safe) ─── */
 async function fetchAI(payload){
  const url=getApiUrl();
 
@@ -443,34 +396,21 @@ async function fetchAI(payload){
  catch(e){ throw new Error("Gagal baca respons: "+e.message); }
 
  if(!raw||!raw.trim()){
-  throw new Error(
-   "Server balas kosong (status "+response.status+"). "+
-   "Backend mungkin crash atau gak ngirim JSON. Cek log backend."
-  );
+  throw new Error("Server balas kosong (status "+response.status+"). Backend mungkin crash.");
  }
 
  let data;
  try{ data=JSON.parse(raw); }
  catch(e){
-  throw new Error(
-   "Respons bukan JSON valid (status "+response.status+"): "+
-   raw.slice(0,120).replace(/\s+/g," ")
-  );
+  throw new Error("Respons bukan JSON valid (status "+response.status+"): "+raw.slice(0,120).replace(/\s+/g," "));
  }
 
- if(!response.ok){
-  throw new Error(data.error||("HTTP "+response.status));
- }
- if(!data.answer){
-  throw new Error("Field 'answer' kosong di respons.");
- }
+ if(!response.ok){ throw new Error(data.error||("HTTP "+response.status)); }
+ if(!data.answer){ throw new Error("Field 'answer' kosong di respons."); }
  return String(data.answer).trim();
 }
 
-/* ═══════════════════════════════════════════════
-   HELPERS
-   ═══════════════════════════════════════════════ */
-
+/* ─── HELPERS ─── */
 const norm=t=>String(t||"").replace(/\s+/g," ").trim();
 
 function isVisible(el){
@@ -532,10 +472,7 @@ function findAnswerField(){
  return null;
 }
 
-/* ═══════════════════════════════════════════════
-   IMAGES
-   ═══════════════════════════════════════════════ */
-
+/* ─── IMAGES ─── */
 const MAX_DATA_URL=1_500_000;
 
 function svgToDataUrl(svgEl){
@@ -595,10 +532,7 @@ function collectImagesNear(el, limit=4){
  return out.slice(0,limit);
 }
 
-/* ═══════════════════════════════════════════════
-   SCRAPER
-   ═══════════════════════════════════════════════ */
-
+/* ─── SCRAPER ─── */
 function scrapeQuestion(){
 
  // radio MC
@@ -678,10 +612,7 @@ function scrapeQuestion(){
  return null;
 }
 
-/* ═══════════════════════════════════════════════
-   HIGHLIGHT / CLICK / FILL
-   ═══════════════════════════════════════════════ */
-
+/* ─── HIGHLIGHT / CLICK / FILL ─── */
 function clearHighlight(){
  for(const el of lastHighlighted){
   try{
@@ -703,3 +634,229 @@ function highlight(el){
   lastHighlighted.push(el);
   el.scrollIntoView({behavior:"smooth",block:"center"});
  }catch(_){}
+}
+function clickOption(el){
+ if(!el)return;
+ try{
+  if(el.tagName==="INPUT"&&el.type==="radio"){ el.click(); return; }
+  const r=el.querySelector&&el.querySelector('input[type="radio"]');
+  if(r){ r.click(); return; }
+  const lbl=el.closest&&el.closest("label");
+  if(lbl){ lbl.click(); return; }
+  if(el.click)el.click();
+ }catch(_){}
+}
+function fillField(field,text){
+ if(!field||text==null)return false;
+ try{
+  const proto=field.tagName==="TEXTAREA"?HTMLTextAreaElement.prototype:HTMLInputElement.prototype;
+  const desc=Object.getOwnPropertyDescriptor(proto,"value");
+  if(desc&&desc.set)desc.set.call(field,text); else field.value=text;
+  field.dispatchEvent(new Event("input",{bubbles:true}));
+  field.dispatchEvent(new Event("change",{bubbles:true}));
+  field.focus();
+  return true;
+ }catch(_){
+  try{ field.value=text; return true; }catch(__){ return false; }
+ }
+}
+
+/* ─── MULTIMODAL ─── */
+function buildContent(text,images){
+ if(!images||!images.length)return text;
+ const parts=[{type:"text",text}];
+ for(const img of images){
+  if(!img.src)continue;
+  parts.push({type:"image_url",image_url:{url:img.src}});
+ }
+ return parts;
+}
+
+/* ─── ANALISA ─── */
+async function analyze(){
+ if(!isUnlocked()){
+  showPanel(); lock.style.display="flex"; shakeLock();
+  setTimeout(()=>keyInput.focus(),400); return;
+ }
+ if(analyzeBtn.disabled)return;
+ clearHighlight();
+
+ const scraped=scrapeQuestion();
+ if(!scraped||!scraped.question){
+  addMessage("❌ Tidak bisa mendeteksi soal di tab ini. Pastikan teks soal tampil di halaman.","ai");
+  return;
+ }
+
+ const hasChoices=Array.isArray(scraped.options)&&scraped.options.length>=2;
+ const hasImages=Array.isArray(scraped.images)&&scraped.images.length>0;
+ const LETTERS="ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+ const userBubble=addMessage(
+  (hasChoices
+   ?`🔍 Soal terdeteksi (${scraped.options.length} pilihan):\n\n${scraped.question}\n\n`+scraped.options.map((o,i)=>`${LETTERS[i]}. ${o.text}`).join("\n")
+   :`🔍 Soal terdeteksi (tanpa pilihan):\n\n${scraped.question}`)
+  +(hasImages?`\n\n🖼 ${scraped.images.length} gambar terdeteksi di soal`:""),
+  "user"
+ );
+
+ if(hasImages){
+  for(const img of scraped.images){
+   try{
+    const t=document.createElement("img");
+    t.className="thumb"; t.src=img.src; t.alt=img.alt||"";
+    userBubble.appendChild(t);
+   }catch(_){}
+  }
+ }
+
+ analyzeBtn.disabled=true;
+ analyzeBtn.textContent="…";
+
+ const waiting=addMessage(hasImages?"Menganalisa soal + gambar…":"Menganalisa soal…","ai");
+
+ try{
+  let prompt;
+  const imgNote=hasImages
+   ?`\n\nCATATAN: Soal ini menyertakan ${scraped.images.length} gambar. Amati gambar terlampir, sebutkan singkat isinya, lalu gunakan informasinya untuk menjawab.`
+   :"";
+
+  if(hasChoices){
+   const optBlock=scraped.options.map((o,i)=>`${LETTERS[i]}. ${o.text}`).join("\n");
+   prompt=
+    `Kamu asisten analisa soal pilihan ganda.\nTentukan jawaban paling benar.\n\n`+
+    `SOAL:\n${scraped.question}\n\nPILIHAN:\n${optBlock}`+imgNote+
+    `\n\nFormat persis:\nGAMBAR: <deskripsi / "-">\nJAWABAN: <satu huruf>\nALASAN: <1-2 kalimat>`;
+  }else{
+   prompt=
+    `Kamu asisten menjawab soal isian/uraian.\nTentukan jawaban paling benar.\n\n`+
+    `SOAL:\n${scraped.question}`+imgNote+
+    `\n\nFormat persis:\nGAMBAR: <deskripsi / "-">\nJAWABAN: <jawaban singkat>\nPENJELASAN: <1-2 kalimat>`;
+  }
+
+  let ans=null;
+
+  if(hasImages){
+   try{
+    ans=await fetchAI({messages:[{role:"user",content:buildContent(prompt,scraped.images)}]});
+   }catch(e){
+    waiting.textContent="Gagal kirim gambar ("+e.message+"). Mencoba tanpa gambar…";
+    const textPrompt=prompt+`\n\n(Catatan sistem: gambar gagal dikirim ke model. Jawab berdasarkan teks soal saja.)`;
+    ans=await fetchAI({messages:[{role:"user",content:textPrompt}]});
+   }
+  }else{
+   ans=await fetchAI({messages:[{role:"user",content:prompt}]});
+  }
+
+  waiting.textContent=ans;
+
+  if(hasChoices){
+   const m=ans.match(/JAWABAN\s*[:\-]\s*([A-Za-z])\b/);
+   if(m){
+    const letter=m[1].toUpperCase();
+    const idx=LETTERS.indexOf(letter);
+    if(idx>=0&&idx<scraped.options.length){
+     const chosen=scraped.options[idx];
+     highlight(chosen.el);
+     const wrap=document.createElement("div"); wrap.style.marginTop="6px";
+     const btn=document.createElement("button");
+     btn.className="pick"; btn.textContent=`✓ Pilih ${letter}`;
+     btn.onclick=()=>clickOption(chosen.el);
+     wrap.appendChild(btn); waiting.appendChild(wrap);
+     chat.scrollTop=chat.scrollHeight;
+    }
+   }
+  }else{
+   const mj=ans.match(/JAWABAN\s*[:\-]\s*([^\n]+)/i);
+   let shortText=null;
+   if(mj)shortText=mj[1].trim().replace(/^["'`]|["'`]$/g,"");
+   if(shortText&&scraped.field){
+    const wrap=document.createElement("div"); wrap.style.marginTop="6px";
+    const btn=document.createElement("button");
+    btn.className="pick"; btn.textContent=`✓ Isi jawaban ke kolom`;
+    btn.onclick=()=>{
+     const ok=fillField(scraped.field,shortText);
+     if(ok)highlight(scraped.field);
+    };
+    wrap.appendChild(btn); waiting.appendChild(wrap);
+    chat.scrollTop=chat.scrollHeight;
+   }
+  }
+
+ }catch(error){
+  waiting.textContent="Error: "+error.message;
+ }finally{
+  analyzeBtn.disabled=false;
+  analyzeBtn.textContent="🔍";
+  chat.scrollTop=chat.scrollHeight;
+ }
+}
+
+analyzeBtn.onclick=analyze;
+
+/* ─── CHAT BIASA ─── */
+async function ask(){
+ if(!isUnlocked()){
+  showPanel(); lock.style.display="flex"; shakeLock();
+  setTimeout(()=>keyInput.focus(),400); return;
+ }
+
+ const text=input.value.trim();
+ if(!text||send.disabled)return;
+
+ input.value="";
+ addMessage(text,"user");
+ history.push({role:"user",content:text});
+ history=history.slice(-10);
+
+ send.disabled=true;
+ send.textContent="MENGHUBUNGKAN...";
+
+ const waiting=addMessage("Sedang berpikir...","ai");
+
+ try{
+  const ans=await fetchAI({messages:history});
+  waiting.textContent=ans;
+  history.push({role:"assistant",content:ans});
+  history=history.slice(-10);
+ }catch(error){
+  waiting.textContent="Error: "+error.message;
+  history.pop();
+ }finally{
+  send.disabled=false;
+  send.textContent="✦ KIRIM";
+  chat.scrollTop=chat.scrollHeight;
+ }
+}
+
+send.onclick=ask;
+input.onkeydown=e=>{
+ if(e.key==="Enter"&&(e.ctrlKey||e.metaKey)){
+  e.preventDefault(); ask();
+ }
+};
+
+/* ─── DRAG ─── */
+const header=$("header");
+let dragging=false,offsetX=0,offsetY=0;
+
+header.onpointerdown=e=>{
+ if(e.target.closest("button"))return;
+ const rect=panel.getBoundingClientRect();
+ dragging=true;
+ offsetX=e.clientX-rect.left;
+ offsetY=e.clientY-rect.top;
+ header.setPointerCapture(e.pointerId);
+};
+header.onpointermove=e=>{
+ if(!dragging)return;
+ const maxX=window.innerWidth-panel.offsetWidth;
+ const maxY=window.innerHeight-panel.offsetHeight;
+ const x=Math.max(0,Math.min(maxX,e.clientX-offsetX));
+ const y=Math.max(0,Math.min(maxY,e.clientY-offsetY));
+ panel.style.left=x+"px"; panel.style.top=y+"px";
+ panel.style.right="auto"; panel.style.bottom="auto";
+};
+header.onpointerup=()=>{ dragging=false; };
+header.onpointercancel=()=>{ dragging=false; };
+
+})();
