@@ -27,7 +27,7 @@ button,textarea{font:inherit}
  pointer-events:auto;display:none;position:fixed;
  right:10px;bottom:72px;
  width:min(300px,calc(100vw - 20px));
- height:min(420px,calc(100dvh - 90px));
+ height:min(440px,calc(100dvh - 90px));
  background:rgba(10,5,20,var(--op,1));
  border:1px solid #a855f7;border-radius:15px;
  color:white;overflow:hidden;font:12px Arial;
@@ -43,16 +43,16 @@ header{
 }
 
 .title{
- color:#e9c5ff;font-weight:bold;
+ color:#e9c5ff;font-weight:bold;font-size:11px;
  text-shadow:0 0 8px #c084fc;
 }
 
-.tools{display:flex;gap:4px}
+.tools{display:flex;gap:3px}
 
 .tools button{
  background:#35164f;color:#e9c5ff;
  border:1px solid #a855f7;
- padding:4px 8px;border-radius:6px;
+ padding:4px 7px;border-radius:6px;
  cursor:pointer;font-size:12px;
 }
 
@@ -158,9 +158,9 @@ button:disabled{opacity:.5}
  <header>
   <b class="title">✦ WAYGROUND AI</b>
   <div class="tools">
-   <button class="essay" title="Analisa soal esai di tab ini">📝</button>
-   <button class="analyze" title="Analisa soal pilihan ganda di tab ini">🔍</button>
-   <button class="hide" title="Sembunyikan semua (tap pojok kanan bawah)">−</button>
+   <button class="essay" title="Analisa soal esai">📝</button>
+   <button class="analyze" title="Analisa soal pilihan ganda">🔍</button>
+   <button class="hide" title="Sembunyikan semua">−</button>
    <button class="close" title="Tutup panel">×</button>
   </div>
  </header>
@@ -179,7 +179,7 @@ button:disabled{opacity:.5}
   <div class="chat">
    <div class="msg ai">
     Halo! ✦ Aku tutor belajar AI.
-    🔍 = analisa pilihan ganda, 📝 = analisa soal esai.
+    🔍 = PG, 📝 = Esai. Kalau soal ketutup panel, geser dulu panelnya.
    </div>
   </div>
 
@@ -259,7 +259,7 @@ async function callAI(messages){
 }
 
 /* ═══════════════════════════════════════════════
-   SCRAPER PILIHAN GANDA
+   HELPERS
    ═══════════════════════════════════════════════ */
 
 const norm=t=>String(t||"").replace(/\s+/g," ").trim();
@@ -291,6 +291,19 @@ function getRadioLabel(r){
  }
  return norm(t);
 }
+
+/* Dump teks halaman (fallback untuk SPA / DOM aneh) */
+function scrapeRawText(){
+ try{
+  const raw=norm(document.body.innerText);
+  if(raw.length<20)return null;
+  return raw.length>4000?raw.slice(0,4000):raw;
+ }catch(_){ return null; }
+}
+
+/* ═══════════════════════════════════════════════
+   SCRAPER PILIHAN GANDA
+   ═══════════════════════════════════════════════ */
 
 function scrapeQuestion(){
  const radios=[...document.querySelectorAll('input[type="radio"]:not([disabled])')];
@@ -362,11 +375,10 @@ function scrapeQuestion(){
 }
 
 /* ═══════════════════════════════════════════════
-   SCRAPER SOAL ESAI
+   SCRAPER SOAL ESAI (tidak hard-fail kalau tak ada field)
    ═══════════════════════════════════════════════ */
 
 function scrapeEssay(){
- // cari field jawaban aktif
  const fields=[...document.querySelectorAll('textarea,[contenteditable="true"]')]
   .filter(el=>{
    try{
@@ -375,62 +387,62 @@ function scrapeEssay(){
    }catch(_){ return false; }
   });
 
- if(!fields.length)return null;
+ const field=fields.find(f=>f===document.activeElement)||fields[0]||null;
 
- const field=fields.find(f=>f===document.activeElement)||fields[0];
-
- // cari teks soal
  let question="";
 
- // strategi 1: selector class/heading, pilih yg paling dekat di ATAS field
- const fieldRect=field.getBoundingClientRect();
- let bestAbove=null;
- let bestDist=Infinity;
- const qSels=[
-  '[class*="question" i]','[class*="prompt" i]','[class*="stem" i]','[class*="qtext" i]',
-  '[data-testid*="question"]'
- ];
- for(const sel of qSels){
-  for(const el of document.querySelectorAll(sel)){
-   if(el.contains(field)||field.contains(el))continue;
-   const t=norm(el.innerText);
-   if(t.length<10||t.length>2000)continue;
-   const r=el.getBoundingClientRect();
-   if(r.height<=0)continue;
-   const dist=fieldRect.top-r.bottom;
-   if(dist>-30&&dist<bestDist){
-    bestAbove=el;
-    bestDist=dist;
-   }
-  }
- }
-
- if(bestAbove)question=norm(bestAbove.innerText);
-
- // strategi 2: walk up dari field, sibling sebelumnya
- if(!question){
-  let node=field;
-  let depth=0;
-  while(node&&depth<10&&!question){
-   let sib=node.previousElementSibling;
-   while(sib){
-    if(!sib.contains(field)){
-     const t=norm(sib.innerText);
-     if(t.length>10&&t.length<2000){ question=t; break; }
+ if(field){
+  const fieldRect=field.getBoundingClientRect();
+  let bestAbove=null;
+  let bestDist=Infinity;
+  const qSels=[
+   '[class*="question" i]','[class*="prompt" i]','[class*="stem" i]','[class*="qtext" i]',
+   '[data-testid*="question"]'
+  ];
+  for(const sel of qSels){
+   for(const el of document.querySelectorAll(sel)){
+    if(el.contains(field)||field.contains(el))continue;
+    const t=norm(el.innerText);
+    if(t.length<10||t.length>2000)continue;
+    const r=el.getBoundingClientRect();
+    if(r.height<=0)continue;
+    const dist=fieldRect.top-r.bottom;
+    if(dist>-30&&dist<bestDist){
+     bestAbove=el;
+     bestDist=dist;
     }
-    sib=sib.previousElementSibling;
    }
-   node=node.parentElement;
-   depth++;
+  }
+  if(bestAbove)question=norm(bestAbove.innerText);
+
+  if(!question){
+   let node=field;
+   let depth=0;
+   while(node&&depth<10&&!question){
+    let sib=node.previousElementSibling;
+    while(sib){
+     if(!sib.contains(field)){
+      const t=norm(sib.innerText);
+      if(t.length>10&&t.length<2000){ question=t; break; }
+     }
+     sib=sib.previousElementSibling;
+    }
+    node=node.parentElement;
+    depth++;
+   }
   }
  }
 
- // strategi 3: heading terbesar di viewport atas
  if(!question){
-  for(const h of document.querySelectorAll('h1,h2,h3,h4')){
+  for(const h of document.querySelectorAll('h1,h2,h3,h4,[class*="question" i],[class*="prompt" i]')){
    const t=norm(h.innerText);
    if(t.length>10&&t.length<2000){ question=t; break; }
   }
+ }
+
+ if(!question){
+  const raw=scrapeRawText();
+  if(raw)question=raw;
  }
 
  if(!question)return null;
@@ -438,7 +450,7 @@ function scrapeEssay(){
 }
 
 /* ═══════════════════════════════════════════════
-   HIGHLIGHT + CLICK PILIHAN
+   HIGHLIGHT + CLICK
    ═══════════════════════════════════════════════ */
 
 function clearHighlight(){
@@ -486,56 +498,97 @@ async function analyze(){
  clearHighlight();
 
  const scraped=scrapeQuestion();
- if(!scraped||!scraped.options||scraped.options.length<2){
+
+ /* ── jalur A: struktur terdeteksi ── */
+ if(scraped&&scraped.options&&scraped.options.length>=2){
+  const LETTERS="ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  const optBlock=scraped.options.map((o,i)=>`${LETTERS[i]}. ${o.text}`).join("\n");
+
   addMessage(
-   "❌ Tidak bisa mendeteksi soal pilihan ganda.\n"+
-   "Pastikan soal + pilihan jawaban sedang tampil.",
+   `🔍 Soal terdeteksi (${scraped.options.length} pilihan):\n\n${scraped.question}\n\n${optBlock}`,
+   "user"
+  );
+
+  const prompt=
+   `Kamu asisten yang menganalisa soal pilihan ganda.\n`+
+   `Tentukan jawaban yang paling benar.\n\n`+
+   `SOAL:\n${scraped.question}\n\n`+
+   `PILIHAN:\n${optBlock}\n\n`+
+   `Jawab dengan format persis:\nJAWABAN: <satu huruf>\nALASAN: <1-2 kalimat>`;
+
+  analyzeBtn.disabled=true;
+  analyzeBtn.textContent="…";
+  const waiting=addMessage("Menganalisa soal…","ai");
+
+  try{
+   const ans=await callAI([{ role:"user", content:prompt }]);
+   waiting.textContent=ans;
+
+   const m=ans.match(/JAWABAN\s*[:\-]\s*([A-Za-z])\b/);
+   if(m){
+    const letter=m[1].toUpperCase();
+    const idx=LETTERS.indexOf(letter);
+    if(idx>=0&&idx<scraped.options.length){
+     const chosen=scraped.options[idx];
+     highlight(chosen.el);
+     const line=document.createElement("div");
+     line.style.marginTop="6px";
+     const btn=document.createElement("button");
+     btn.className="pick";
+     btn.textContent=`✓ Pilih ${letter}`;
+     btn.onclick=()=>clickOption(chosen.el);
+     line.appendChild(btn);
+     waiting.appendChild(line);
+     chat.scrollTop=chat.scrollHeight;
+    }
+   }
+  }catch(err){
+   waiting.textContent="Error: "+err.message;
+  }finally{
+   analyzeBtn.disabled=false;
+   analyzeBtn.textContent="🔍";
+   chat.scrollTop=chat.scrollHeight;
+  }
+  return;
+ }
+
+ /* ── jalur B: fallback ke teks mentah halaman ── */
+ const raw=scrapeRawText();
+ if(!raw){
+  addMessage(
+   "❌ Tidak ada soal yang bisa dibaca di halaman ini.\n"+
+   "Pastikan kamu ada di halaman soal quiz.",
    "ai"
   );
   return;
  }
 
- const LETTERS="ABCDEFGHIJKLMNOPQRSTUVWXYZ";
- const optBlock=scraped.options.map((o,i)=>`${LETTERS[i]}. ${o.text}`).join("\n");
-
  addMessage(
-  `🔍 Soal terdeteksi (${scraped.options.length} pilihan):\n\n${scraped.question}\n\n${optBlock}`,
+  `⚠️ Struktur soal tidak dikenali — pakai mode teks mentah.\n`+
+  `(kirim teks halaman ke AI untuk diparse)\n\n`+
+  `Teks halaman (potongan):\n${raw.slice(0,300)}…`,
   "user"
  );
 
  const prompt=
-  `Kamu adalah asisten yang menganalisa soal pilihan ganda.\n`+
-  `Tentukan jawaban yang paling benar.\n\n`+
-  `SOAL:\n${scraped.question}\n\n`+
-  `PILIHAN:\n${optBlock}\n\n`+
-  `Jawab dengan format persis:\nJAWABAN: <satu huruf>\nALASAN: <1-2 kalimat>`;
+  `Kamu asisten yang menganalisa soal quiz pilihan ganda.\n`+
+  `Di bawah ini adalah teks mentah dari halaman quiz. `+
+  `Identifikasi soal yang sedang tampil dan pilihan jawabannya, `+
+  `lalu tentukan jawaban yang paling benar.\n\n`+
+  `TEKS HALAMAN:\n${raw}\n\n`+
+  `Jawab dengan format persis:\n`+
+  `SOAL: <soal yang kamu temukan>\n`+
+  `PILIHAN: <daftar pilihan yang kamu temukan>\n`+
+  `JAWABAN: <jawaban yang benar>\n`+
+  `ALASAN: <1-2 kalimat>`;
 
  analyzeBtn.disabled=true;
  analyzeBtn.textContent="…";
- const waiting=addMessage("Menganalisa soal…","ai");
+ const waiting=addMessage("Menganalisa teks halaman…","ai");
 
  try{
   const ans=await callAI([{ role:"user", content:prompt }]);
   waiting.textContent=ans;
-
-  const m=ans.match(/JAWABAN\s*[:\-]\s*([A-Za-z])\b/);
-  if(m){
-   const letter=m[1].toUpperCase();
-   const idx=LETTERS.indexOf(letter);
-   if(idx>=0&&idx<scraped.options.length){
-    const chosen=scraped.options[idx];
-    highlight(chosen.el);
-    const line=document.createElement("div");
-    line.style.marginTop="6px";
-    const btn=document.createElement("button");
-    btn.className="pick";
-    btn.textContent=`✓ Pilih ${letter}`;
-    btn.onclick=()=>clickOption(chosen.el);
-    line.appendChild(btn);
-    waiting.appendChild(line);
-    chat.scrollTop=chat.scrollHeight;
-   }
-  }
  }catch(err){
   waiting.textContent="Error: "+err.message;
  }finally{
@@ -548,7 +601,7 @@ async function analyze(){
 analyzeBtn.onclick=analyze;
 
 /* ═══════════════════════════════════════════════
-   TULIS JAWABAN ESAI KE FIELD
+   TULIS KE FIELD (React-friendly)
    ═══════════════════════════════════════════════ */
 
 function writeToField(field,text){
@@ -585,7 +638,7 @@ function writeToField(field,text){
 }
 
 /* ═══════════════════════════════════════════════
-   ANALISA SOAL ESAI
+   ANALISA ESAI
    ═══════════════════════════════════════════════ */
 
 async function analyzeEssay(){
@@ -594,21 +647,21 @@ async function analyzeEssay(){
  const scraped=scrapeEssay();
  if(!scraped){
   addMessage(
-   "❌ Tidak bisa mendeteksi soal esai.\n"+
-   "Pastikan soal esai + kotak jawaban (textarea/contenteditable) terlihat di halaman.",
+   "❌ Tidak ada soal / teks yang bisa dibaca di halaman ini.",
    "ai"
   );
   return;
  }
 
  addMessage(
-  `📝 Soal esai terdeteksi:\n\n${scraped.question}`,
+  `📝 ${scraped.field?"Soal esai terdeteksi":"Soal terdeteksi (tanpa kotak jawaban)"}:\n\n`+
+  `${scraped.question.slice(0,500)}${scraped.question.length>500?"…":""}`,
   "user"
  );
 
  const prompt=
   `Kamu tutor yang menjawab soal esai dengan lengkap dan tepat.\n\n`+
-  `SOAL ESAI:\n${scraped.question}\n\n`+
+  `SOAL:\n${scraped.question}\n\n`+
   `Tulis jawaban esai yang baik, jelas, padat, dalam bahasa Indonesia.\n`+
   `Panjang 2-4 paragraf sesuai kompleksitas soal.\n\n`+
   `Format persis:\nJAWABAN ESAI:\n<isi jawaban lengkap>\n\nPOIN KUNCI:\n- <poin 1>\n- <poin 2>\n- <poin 3>`;
@@ -621,12 +674,11 @@ async function analyzeEssay(){
   const ans=await callAI([{ role:"user", content:prompt }]);
   waiting.textContent=ans;
 
-  // ekstrak bagian "JAWABAN ESAI:" untuk ditulis ke field
   let essay=ans;
   const m=ans.match(/JAWABAN ESAI\s*[:\-]?\s*([\s\S]*?)(?:\n\s*POIN KUNCI|$)/i);
   if(m&&m[1].trim())essay=m[1].trim();
 
-  if(essay){
+  if(essay&&scraped.field){
    const line=document.createElement("div");
    line.style.marginTop="6px";
    const btn=document.createElement("button");
@@ -653,7 +705,7 @@ async function analyzeEssay(){
 essayBtn.onclick=analyzeEssay;
 
 /* ═══════════════════════════════════════════════
-   CHAT BIASA
+   CHAT
    ═══════════════════════════════════════════════ */
 
 async function ask(){
@@ -662,7 +714,6 @@ async function ask(){
 
  input.value="";
  addMessage(text,"user");
-
  history.push({ role:"user", content:text });
  history=history.slice(-10);
 
@@ -693,7 +744,7 @@ input.onkeydown=e=>{
  }
 };
 
-// DRAG PANEL
+// DRAG
 const header=$("header");
 let dragging=false,offsetX=0,offsetY=0;
 
