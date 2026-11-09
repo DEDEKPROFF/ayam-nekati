@@ -218,7 +218,7 @@ button:disabled{opacity:.5}
 
 <section class="panel">
  <header>
-  <b class="title">✦ WAYGROUND AI</b>
+  <b class="title">✦ WAYGROUND • NURRY AI (ENC)</b>
   <div class="tools">
    <button class="analyze" title="Analisa soal di tab ini">🔍</button>
    <button class="settingsBtn" title="Pengaturan backend">⚙</button>
@@ -230,11 +230,11 @@ button:disabled{opacity:.5}
  <div class="body">
 
   <div class="lock">
-   <div class="lockTitle">✦ WAYGROUND AI</div>
+   <div class="lockTitle">✦ SecurityWayground Nurry/div>
    <div class="lockSub">MASUKKAN KEY UNTUK MEMBUKA</div>
    <input class="keyInput" type="password" placeholder="key…"
           autocomplete="off" spellcheck="false" autocapitalize="off" autocorrect="off" />
-   <button class="keyBtn">🔓 BUKA</button>
+   <button class="keyBtn">🔓 Akses</button>
    <div class="keyErr"></div>
   </div>
 
@@ -250,7 +250,7 @@ button:disabled{opacity:.5}
    </div>
   </div>
 
-  <div class="subtitle">PURPLE CYBERPUNK • OPENROUTER</div>
+  <div class="subtitle">AKSES WAYGROUND ONLY | BY NURRY</div>
 
   <div class="setting">
    <div class="line">
@@ -270,7 +270,7 @@ button:disabled{opacity:.5}
 
   <textarea placeholder="Tulis pertanyaan atau soal latihan..."></textarea>
 
-  <button class="send">✦ KIRIM PESAN</button>
+  <button class="send">✦ KIRIM</button>
  </div>
 </section>
 
@@ -703,247 +703,3 @@ function highlight(el){
   lastHighlighted.push(el);
   el.scrollIntoView({behavior:"smooth",block:"center"});
  }catch(_){}
-}
-function clickOption(el){
- if(!el)return;
- try{
-  if(el.tagName==="INPUT"&&el.type==="radio"){ el.click(); return; }
-  const r=el.querySelector&&el.querySelector('input[type="radio"]');
-  if(r){ r.click(); return; }
-  const lbl=el.closest&&el.closest("label");
-  if(lbl){ lbl.click(); return; }
-  if(el.click)el.click();
- }catch(_){}
-}
-function fillField(field,text){
- if(!field||text==null)return false;
- try{
-  const proto=field.tagName==="TEXTAREA"?HTMLTextAreaElement.prototype:HTMLInputElement.prototype;
-  const desc=Object.getOwnPropertyDescriptor(proto,"value");
-  if(desc&&desc.set)desc.set.call(field,text); else field.value=text;
-  field.dispatchEvent(new Event("input",{bubbles:true}));
-  field.dispatchEvent(new Event("change",{bubbles:true}));
-  field.focus();
-  return true;
- }catch(_){
-  try{ field.value=text; return true; }catch(__){ return false; }
- }
-}
-
-/* ═══════════════════════════════════════════════
-   MULTIMODAL
-   ═══════════════════════════════════════════════ */
-
-function buildContent(text,images){
- if(!images||!images.length)return text;
- const parts=[{type:"text",text}];
- for(const img of images){
-  if(!img.src)continue;
-  parts.push({type:"image_url",image_url:{url:img.src}});
- }
- return parts;
-}
-
-/* ═══════════════════════════════════════════════
-   ANALISA
-   ═══════════════════════════════════════════════ */
-
-async function analyze(){
- if(!isUnlocked()){
-  showPanel(); lock.style.display="flex"; shakeLock();
-  setTimeout(()=>keyInput.focus(),400); return;
- }
- if(analyzeBtn.disabled)return;
- clearHighlight();
-
- const scraped=scrapeQuestion();
- if(!scraped||!scraped.question){
-  addMessage("❌ Tidak bisa mendeteksi soal di tab ini. Pastikan teks soal tampil di halaman.","ai");
-  return;
- }
-
- const hasChoices=Array.isArray(scraped.options)&&scraped.options.length>=2;
- const hasImages=Array.isArray(scraped.images)&&scraped.images.length>0;
- const LETTERS="ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-
- const userBubble=addMessage(
-  (hasChoices
-   ?`🔍 Soal terdeteksi (${scraped.options.length} pilihan):\n\n${scraped.question}\n\n`+scraped.options.map((o,i)=>`${LETTERS[i]}. ${o.text}`).join("\n")
-   :`🔍 Soal terdeteksi (tanpa pilihan):\n\n${scraped.question}`)
-  +(hasImages?`\n\n🖼 ${scraped.images.length} gambar terdeteksi di soal`:""),
-  "user"
- );
-
- if(hasImages){
-  for(const img of scraped.images){
-   try{
-    const t=document.createElement("img");
-    t.className="thumb"; t.src=img.src; t.alt=img.alt||"";
-    userBubble.appendChild(t);
-   }catch(_){}
-  }
- }
-
- analyzeBtn.disabled=true;
- analyzeBtn.textContent="…";
-
- const waiting=addMessage(hasImages?"Menganalisa soal + gambar…":"Menganalisa soal…","ai");
-
- try{
-  let prompt;
-  const imgNote=hasImages
-   ?`\n\nCATATAN: Soal ini menyertakan ${scraped.images.length} gambar. Amati gambar terlampir, sebutkan singkat isinya, lalu gunakan informasinya untuk menjawab.`
-   :"";
-
-  if(hasChoices){
-   const optBlock=scraped.options.map((o,i)=>`${LETTERS[i]}. ${o.text}`).join("\n");
-   prompt=
-    `Kamu asisten analisa soal pilihan ganda.\nTentukan jawaban paling benar.\n\n`+
-    `SOAL:\n${scraped.question}\n\nPILIHAN:\n${optBlock}`+imgNote+
-    `\n\nFormat persis:\nGAMBAR: <deskripsi / "-">\nJAWABAN: <satu huruf>\nALASAN: <1-2 kalimat>`;
-  }else{
-   prompt=
-    `Kamu asisten menjawab soal isian/uraian.\nTentukan jawaban paling benar.\n\n`+
-    `SOAL:\n${scraped.question}`+imgNote+
-    `\n\nFormat persis:\nGAMBAR: <deskripsi / "-">\nJAWABAN: <jawaban singkat>\nPENJELASAN: <1-2 kalimat>`;
-  }
-
-  let ans=null;
-  let usedVision=hasImages;
-
-  // 1) coba dengan gambar (kalau ada)
-  if(hasImages){
-   try{
-    ans=await fetchAI({messages:[{role:"user",content:buildContent(prompt,scraped.images)}]});
-   }catch(e){
-    // 2) fallback: teks saja
-    waiting.textContent="Gagal kirim gambar ("+e.message+"). Mencoba tanpa gambar…";
-    usedVision=false;
-    const textPrompt=
-     prompt+
-     `\n\n(Catatan sistem: gambar gagal dikirim ke model. Jawab berdasarkan teks soal saja.)`;
-    ans=await fetchAI({messages:[{role:"user",content:textPrompt}]});
-   }
-  }else{
-   ans=await fetchAI({messages:[{role:"user",content:prompt}]});
-  }
-
-  waiting.textContent=ans;
-
-  if(hasChoices){
-   const m=ans.match(/JAWABAN\s*[:\-]\s*([A-Za-z])\b/);
-   if(m){
-    const letter=m[1].toUpperCase();
-    const idx=LETTERS.indexOf(letter);
-    if(idx>=0&&idx<scraped.options.length){
-     const chosen=scraped.options[idx];
-     highlight(chosen.el);
-     const wrap=document.createElement("div"); wrap.style.marginTop="6px";
-     const btn=document.createElement("button");
-     btn.className="pick"; btn.textContent=`✓ Pilih ${letter}`;
-     btn.onclick=()=>clickOption(chosen.el);
-     wrap.appendChild(btn); waiting.appendChild(wrap);
-     chat.scrollTop=chat.scrollHeight;
-    }
-   }
-  }else{
-   const mj=ans.match(/JAWABAN\s*[:\-]\s*([^\n]+)/i);
-   let shortText=null;
-   if(mj)shortText=mj[1].trim().replace(/^["'`]|["'`]$/g,"");
-   if(shortText&&scraped.field){
-    const wrap=document.createElement("div"); wrap.style.marginTop="6px";
-    const btn=document.createElement("button");
-    btn.className="pick"; btn.textContent=`✓ Isi jawaban ke kolom`;
-    btn.onclick=()=>{
-     const ok=fillField(scraped.field,shortText);
-     if(ok)highlight(scraped.field);
-    };
-    wrap.appendChild(btn); waiting.appendChild(wrap);
-    chat.scrollTop=chat.scrollHeight;
-   }
-  }
-
- }catch(error){
-  waiting.textContent="Error: "+error.message;
- }finally{
-  analyzeBtn.disabled=false;
-  analyzeBtn.textContent="🔍";
-  chat.scrollTop=chat.scrollHeight;
- }
-}
-
-analyzeBtn.onclick=analyze;
-
-/* ═══════════════════════════════════════════════
-   CHAT BIASA
-   ═══════════════════════════════════════════════ */
-
-async function ask(){
- if(!isUnlocked()){
-  showPanel(); lock.style.display="flex"; shakeLock();
-  setTimeout(()=>keyInput.focus(),400); return;
- }
-
- const text=input.value.trim();
- if(!text||send.disabled)return;
-
- input.value="";
- addMessage(text,"user");
- history.push({role:"user",content:text});
- history=history.slice(-10);
-
- send.disabled=true;
- send.textContent="MENGHUBUNGKAN...";
-
- const waiting=addMessage("Sedang berpikir...","ai");
-
- try{
-  const ans=await fetchAI({messages:history});
-  waiting.textContent=ans;
-  history.push({role:"assistant",content:ans});
-  history=history.slice(-10);
- }catch(error){
-  waiting.textContent="Error: "+error.message;
-  history.pop();
- }finally{
-  send.disabled=false;
-  send.textContent="✦ KIRIM PESAN";
-  chat.scrollTop=chat.scrollHeight;
- }
-}
-
-send.onclick=ask;
-input.onkeydown=e=>{
- if(e.key==="Enter"&&(e.ctrlKey||e.metaKey)){
-  e.preventDefault(); ask();
- }
-};
-
-/* ═══════════════════════════════════════════════
-   DRAG
-   ═══════════════════════════════════════════════ */
-
-const header=$("header");
-let dragging=false,offsetX=0,offsetY=0;
-
-header.onpointerdown=e=>{
- if(e.target.closest("button"))return;
- const rect=panel.getBoundingClientRect();
- dragging=true;
- offsetX=e.clientX-rect.left;
- offsetY=e.clientY-rect.top;
- header.setPointerCapture(e.pointerId);
-};
-header.onpointermove=e=>{
- if(!dragging)return;
- const maxX=window.innerWidth-panel.offsetWidth;
- const maxY=window.innerHeight-panel.offsetHeight;
- const x=Math.max(0,Math.min(maxX,e.clientX-offsetX));
- const y=Math.max(0,Math.min(maxY,e.clientY-offsetY));
- panel.style.left=x+"px"; panel.style.top=y+"px";
- panel.style.right="auto"; panel.style.bottom="auto";
-};
-header.onpointerup=()=>{ dragging=false; };
-header.onpointercancel=()=>{ dragging=false; };
-
-})();
