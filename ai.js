@@ -157,7 +157,7 @@ button:disabled{opacity:.5}
 
 <section class="panel">
  <header>
-  <b class="title">✦ WAYGROUND AI</b>
+  <b class="title">✦ NURRY Wayground Ai</b>
   <div class="tools">
    <button class="analyze" title="Analisa soal pilihan ganda di tab ini">🔍</button>
    <button class="hide" title="Sembunyikan semua (tap pojok kanan bawah untuk munculkan)">−</button>
@@ -166,7 +166,7 @@ button:disabled{opacity:.5}
  </header>
 
  <div class="body">
-  <div class="subtitle">PURPLE CYBERPUNK • OPENROUTER</div>
+  <div class="subtitle">CHEAT wayground • By Nurry</div>
 
   <div class="setting">
    <div class="line">
@@ -178,15 +178,16 @@ button:disabled{opacity:.5}
 
   <div class="chat">
    <div class="msg ai">
-    Halo! ✦ Aku tutor belajar AI.
-    Masukkan soal latihan atau materi yang ingin kamu pahami.
+    CHEAT ON🟢 | WAYGROUND AI ACTIVE
+    STATUS : ONLINE
+    UPTIME : -
     Klik 🔍 untuk analisa soal pilihan ganda di tab ini.
    </div>
   </div>
 
   <textarea placeholder="Tulis pertanyaan atau soal latihan..."></textarea>
 
-  <button class="send">✦ KIRIM PESAN</button>
+  <button class="send">✦ ANALISIS</button>
  </div>
 </section>
 
