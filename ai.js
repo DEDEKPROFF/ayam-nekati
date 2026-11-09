@@ -59,6 +59,7 @@ header{
 .tools button:disabled{opacity:.5;cursor:not-allowed}
 
 .body{
+ position:relative;
  padding:10px;height:calc(100% - 43px);
  display:flex;flex-direction:column;gap:8px;
 }
@@ -101,6 +102,12 @@ input{width:100%;accent-color:#c084fc}
  align-self:flex-end;
 }
 
+.thumb{
+ display:block;margin-top:6px;max-width:100%;
+ max-height:120px;border-radius:6px;
+ border:1px solid #a855f7;
+}
+
 textarea{
  height:65px;min-height:50px;resize:vertical;
  background:#13091f;color:white;
@@ -131,6 +138,46 @@ textarea:focus{
 
 button:disabled{opacity:.5}
 
+/* ── LOCK OVERLAY ── */
+.lock{
+ position:absolute;inset:0;z-index:10;
+ background:rgba(10,5,20,calc(var(--op,1) * .92 + .08));
+ display:flex;flex-direction:column;
+ align-items:center;justify-content:center;
+ padding:22px 18px;gap:10px;text-align:center;
+ backdrop-filter:blur(4px);
+}
+.lockTitle{
+ color:#e9c5ff;font-weight:bold;font-size:14px;
+ text-shadow:0 0 10px #c084fc;
+ letter-spacing:1px;
+}
+.lockSub{
+ color:#c084fc;font-size:9px;letter-spacing:1.5px;
+ margin-bottom:4px;
+}
+.keyInput{
+ width:100%;padding:10px;background:#13091f;color:white;
+ border:1px solid #9333ea;border-radius:8px;
+ text-align:center;font-family:monospace;
+ letter-spacing:3px;outline:none;
+}
+.keyInput:focus{border-color:#d8b4fe;box-shadow:0 0 10px #9333ea66}
+.keyBtn{
+ width:100%;padding:10px;border-radius:8px;
+ background:linear-gradient(90deg,#9333ea,#4c1d95);
+ border:1px solid #c084fc;color:white;
+ font-weight:bold;cursor:pointer;
+ box-shadow:0 0 10px #9333ea66;
+}
+.keyErr{color:#f87171;font-size:10px;min-height:14px;letter-spacing:0}
+@keyframes shake{
+ 0%,100%{transform:translateX(0)}
+ 20%,60%{transform:translateX(-7px)}
+ 40%,80%{transform:translateX(7px)}
+}
+.lock.shake{animation:shake .35s ease}
+
 .restore{
  pointer-events:auto;position:fixed;
  right:0;bottom:0;
@@ -139,74 +186,6 @@ button:disabled{opacity:.5}
  display:none;
  cursor:pointer;
  -webkit-tap-highlight-color:transparent;
-}
-
-/* ── LOGIN GATE ── */
-.login-gate{
- pointer-events:auto;position:fixed;inset:0;
- background:rgba(5,2,12,.92);
- backdrop-filter:blur(6px);
- display:flex;align-items:center;justify-content:center;
- z-index:2147483646;
-}
-.login-box{
- width:min(340px,calc(100vw - 40px));
- background:linear-gradient(160deg,#1a0b2e,#0a0514);
- border:1px solid #a855f7;border-radius:16px;
- padding:24px 20px;color:white;font:13px Arial;
- text-align:center;
- box-shadow:0 0 25px #9333ea88,0 0 60px #581c8755;
- animation:appear .3s ease;
-}
-.login-box h2{
- margin:0 0 6px;color:#e9c5ff;
- font-size:18px;text-shadow:0 0 10px #c084fc;
-}
-.login-box p{
- margin:0 0 18px;color:#c084fc;font-size:11px;
- letter-spacing:1px;
-}
-.login-box input{
- width:100%;padding:11px;border-radius:9px;
- background:#13091f;color:white;
- border:1px solid #9333ea;outline:none;
- text-align:center;letter-spacing:2px;
- font-size:14px;margin-bottom:10px;
-}
-.login-box input:focus{
- border-color:#d8b4fe;
- box-shadow:0 0 12px #9333ea66;
-}
-.login-box button{
- width:100%;padding:11px;border-radius:9px;
- background:linear-gradient(90deg,#9333ea,#4c1d95);
- border:1px solid #c084fc;color:white;
- font-weight:bold;cursor:pointer;
- box-shadow:0 0 12px #9333ea66;
-}
-.login-box .err{
- color:#f87171;font-size:11px;
- min-height:14px;margin-top:6px;
-}
-.logout{
- background:#35164f;color:#e9c5ff;
- border:1px solid #a855f7;
- padding:4px 8px;border-radius:6px;
- cursor:pointer;font-size:10px;
-}
-
-/* ── IMAGE BADGE ── */
-.img-badge{
- display:inline-block;margin-top:6px;
- background:#1e3a8a;color:#93c5fd;
- border:1px solid #3b82f6;
- padding:3px 8px;border-radius:6px;
- font-size:10px;
-}
-.img-preview{
- display:block;max-width:100%;
- max-height:120px;border-radius:6px;
- margin-top:6px;border:1px solid #6b21a8;
 }
 
 @keyframes glow{
@@ -227,13 +206,22 @@ button:disabled{opacity:.5}
   <b class="title">✦ WAYGROUND AI</b>
   <div class="tools">
    <button class="analyze" title="Analisa soal di tab ini">🔍</button>
-   <button class="logout" title="Logout">⎋</button>
    <button class="hide" title="Sembunyikan semua">−</button>
    <button class="close" title="Tutup panel">×</button>
   </div>
  </header>
 
  <div class="body">
+
+  <div class="lock">
+   <div class="lockTitle">✦ WAYGROUND AI</div>
+   <div class="lockSub">MASUKKAN KEY UNTUK MEMBUKA</div>
+   <input class="keyInput" type="password" placeholder="key…"
+          autocomplete="off" spellcheck="false" autocapitalize="off" autocorrect="off" />
+   <button class="keyBtn">🔓 BUKA</button>
+   <div class="keyErr"></div>
+  </div>
+
   <div class="subtitle">PURPLE CYBERPUNK • OPENROUTER</div>
 
   <div class="setting">
@@ -248,7 +236,7 @@ button:disabled{opacity:.5}
    <div class="msg ai">
     Halo! ✦ Aku tutor belajar AI.
     Masukkan soal latihan atau materi yang ingin kamu pahami.
-    Klik 🔍 untuk analisa soal di tab ini (pilihan ganda / isian / uraian / gambar).
+    Klik 🔍 untuk analisa soal di tab ini (pilihan ganda / isian / uraian + gambar).
    </div>
   </div>
 
@@ -259,16 +247,6 @@ button:disabled{opacity:.5}
 </section>
 
 <div class="restore" title=""></div>
-
-<div class="login-gate">
- <div class="login-box">
-  <h2>✦ WAYGROUND AI</h2>
-  <p>MASUKKAN KEY UNTUK AKSES</p>
-  <input class="key-input" type="password" placeholder="KEY LOGIN" autocomplete="off">
-  <button class="key-submit">🔓 BUKA AKSES</button>
-  <div class="err"></div>
- </div>
-</div>
 `;
 
 const $=s=>root.querySelector(s);
@@ -282,68 +260,72 @@ const send=$(".send");
 const slider=$(".range");
 const analyzeBtn=$(".analyze");
 
+const lock=$(".lock");
+const keyInput=$(".keyInput");
+const keyBtn=$(".keyBtn");
+const keyErr=$(".keyErr");
+
 let history=[];
 let lastHighlighted=[];
 
 /* ═══════════════════════════════════════════════
-   KEY LOGIN SYSTEM
+   KEY SYSTEM
    ═══════════════════════════════════════════════ */
-const VALID_KEY = "voxel";
-const STORAGE_KEY = "wgai_auth";
 
-const loginGate = $(".login-gate");
-const keyInput = $(".key-input");
-const keySubmit = $(".key-submit");
-const errEl = $(".err");
-const logoutBtn = $(".logout");
+const PASSWORD="voxel";
+const STORAGE_KEY="wgai_key_ok";
 
-let isAuthed = false;
-
-function unlockUI(){
- isAuthed = true;
- loginGate.style.display = "none";
- fab.style.display = "";
+function isUnlocked(){
+ try{ return localStorage.getItem(STORAGE_KEY)==="ok"; }
+ catch(_){ return false; }
 }
-function lockUI(){
- isAuthed = false;
- loginGate.style.display = "flex";
- fab.style.display = "none";
- panel.style.display = "none";
- restore.style.display = "none";
+
+function setUnlocked(){
+ try{ localStorage.setItem(STORAGE_KEY,"ok"); }catch(_){}
+ lock.style.display="none";
+ keyErr.textContent="";
 }
-function tryLogin(){
- const val = keyInput.value.trim().toLowerCase();
- if(!val){ errEl.textContent = "Key tidak boleh kosong"; return; }
- if(val === VALID_KEY){
-  errEl.textContent = "";
-  localStorage.setItem(STORAGE_KEY, "1");
-  unlockUI();
-  addMessage("🔓 Akses terbuka. Selamat belajar! ✦", "ai");
+
+function shakeLock(){
+ lock.classList.remove("shake");
+ void lock.offsetWidth;
+ lock.classList.add("shake");
+}
+
+function tryUnlock(){
+ const v=keyInput.value.trim().toLowerCase();
+ if(v===PASSWORD){
+  setUnlocked();
  }else{
-  errEl.textContent = "❌ Key salah. Coba lagi.";
-  keyInput.value = "";
+  keyErr.textContent="❌ key salah";
+  shakeLock();
+  keyInput.value="";
   keyInput.focus();
  }
 }
-keySubmit.onclick = tryLogin;
-keyInput.onkeydown = e => {
- if(e.key === "Enter"){ e.preventDefault(); tryLogin(); }
-};
-logoutBtn.onclick = () => {
- localStorage.removeItem(STORAGE_KEY);
- lockUI();
- keyInput.value = "";
- errEl.textContent = "";
+
+keyBtn.onclick=tryUnlock;
+keyInput.onkeydown=e=>{
+ if(e.key==="Enter"){ e.preventDefault(); tryUnlock(); }
 };
 
-if(localStorage.getItem(STORAGE_KEY) === "1"){ unlockUI(); }
-else{ lockUI(); }
+function updateLockState(){
+ if(isUnlocked()){
+  lock.style.display="none";
+ }else{
+  lock.style.display="flex";
+ }
+}
+updateLockState();
 
 /* ═══════════════════════════════════════════════
-   PANEL CONTROL
+   PANEL SHOW / HIDE
    ═══════════════════════════════════════════════ */
 
-function showPanel(){ panel.style.display="block"; }
+function showPanel(){
+ panel.style.display="block";
+ if(!isUnlocked()){ setTimeout(()=>keyInput.focus(),60); }
+}
 function hidePanel(){ panel.style.display="none"; }
 
 function hideAll(){
@@ -354,11 +336,10 @@ function hideAll(){
 function showAll(){
  fab.style.display="";
  panel.style.display="block";
- restore.style.display="none";
+ if(!isUnlocked()){ setTimeout(()=>keyInput.focus(),60); }
 }
 
 fab.onclick=()=>{
- if(!isAuthed){ lockUI(); return; }
  if(panel.style.display==="block")hidePanel();
  else showPanel();
 };
@@ -464,69 +445,75 @@ function findAnswerField(){
 }
 
 /* ═══════════════════════════════════════════════
-   IMAGE DETECTOR
+   IMAGE COLLECTION
    ═══════════════════════════════════════════════ */
 
-function isLikelyQuestionImage(img){
- if(!img)return false;
- const r=img.getBoundingClientRect();
- if(r.width<80||r.height<80)return false;
+const MAX_DATA_URL=1_500_000;
 
- const src=(img.src||"").toLowerCase();
- const alt=(img.alt||"").toLowerCase();
- const cls=(img.className&&img.className.toString?img.className.toString():"").toLowerCase();
-
- const skip=[
-  "icon","logo","avatar","sprite","emoji","badge",
-  "profile","thumbnail","thumb","flag","banner"
- ];
- for(const s of skip){
-  if(cls.includes(s)||alt.includes(s)||src.includes(s))return false;
- }
-
- if(src.startsWith("data:image")&&src.length<2000)return false;
-
- return true;
-}
-
-async function imgToBase64(img){
+function svgToDataUrl(svgEl){
  try{
-  const canvas=document.createElement("canvas");
-  const w=img.naturalWidth||img.width;
-  const h=img.naturalHeight||img.height;
-  if(!w||!h)return null;
-
-  const scale=Math.min(1,1024/Math.max(w,h));
-  canvas.width=Math.round(w*scale);
-  canvas.height=Math.round(h*scale);
-
-  const ctx=canvas.getContext("2d");
-  ctx.drawImage(img,0,0,canvas.width,canvas.height);
-
-  return canvas.toDataURL("image/jpeg",0.8);
- }catch(_){
-  try{
-   const res=await fetch(img.src);
-   const blob=await res.blob();
-   return new Promise((resolve)=>{
-    const reader=new FileReader();
-    reader.onload=()=>resolve(reader.result);
-    reader.onerror=()=>resolve(null);
-    reader.readAsDataURL(blob);
-   });
-  }catch(__){ return null; }
- }
+  const clone=svgEl.cloneNode(true);
+  const xml=new XMLSerializer().serializeToString(clone);
+  const b64=btoa(unescape(encodeURIComponent(xml)));
+  return "data:image/svg+xml;base64,"+b64;
+ }catch(_){ return ""; }
 }
 
-async function findQuestionImages(){
- const imgs=[...document.querySelectorAll("img")].filter(isLikelyQuestionImage);
- const results=[];
- for(const img of imgs.slice(0,3)){
-  if(!isVisible(img))continue;
-  const b64=await imgToBase64(img);
-  if(b64)results.push({el:img,data:b64});
- }
- return results;
+function absUrl(u){
+ if(!u)return "";
+ if(u.startsWith("data:")||u.startsWith("http://")||u.startsWith("https://"))return u;
+ try{ return new URL(u,location.href).href; }catch(_){ return ""; }
+}
+
+function collectImagesNear(el, limit=4){
+ const out=[];
+ const seen=new Set();
+
+ const push=(src,alt)=>{
+  if(!src||seen.has(src))return;
+  if(src.length>MAX_DATA_URL)return;
+  seen.add(src);
+  out.push({src,alt:norm(alt)});
+ };
+
+ const scanNode=(node)=>{
+  if(!node||!node.querySelectorAll)return;
+
+  for(const img of node.querySelectorAll("img")){
+   if(!isVisible(img))continue;
+   const r=img.getBoundingClientRect();
+   if(r.width<32&&r.height<32)continue;
+   const src=img.currentSrc||img.src||img.getAttribute("data-src")||"";
+   push(absUrl(src),img.alt||img.title||"");
+  }
+  for(const svg of node.querySelectorAll("svg")){
+   if(!isVisible(svg))continue;
+   const r=svg.getBoundingClientRect();
+   if(r.width<32&&r.height<32)continue;
+   push(svgToDataUrl(svg),svg.getAttribute("aria-label")||"");
+  }
+  for(const c of node.querySelectorAll("canvas")){
+   if(!isVisible(c))continue;
+   const r=c.getBoundingClientRect();
+   if(r.width<32&&r.height<32)continue;
+   try{ push(c.toDataURL("image/png"),""); }catch(_){}
+  }
+  for(const d of node.querySelectorAll("div,span,section")){
+   if(!isVisible(d))continue;
+   const bg=getComputedStyle(d).backgroundImage;
+   if(!bg||bg==="none")continue;
+   const m=bg.match(/url\(["']?([^"')]+)["']?\)/);
+   if(!m)continue;
+   const r=d.getBoundingClientRect();
+   if(r.width<64||r.height<64)continue;
+   push(absUrl(m[1]),"");
+  }
+ };
+
+ scanNode(el);
+ if(el&&el.parentElement)scanNode(el.parentElement);
+
+ return out.slice(0,limit);
 }
 
 /* ═══════════════════════════════════════════════
@@ -534,6 +521,8 @@ async function findQuestionImages(){
    ═══════════════════════════════════════════════ */
 
 function scrapeQuestion(){
+
+ // ── 1. Radio MC ──
  const radios=[...document.querySelectorAll('input[type="radio"]:not([disabled])')];
  if(radios.length>=2){
   let group=[];
@@ -562,10 +551,15 @@ function scrapeQuestion(){
     const fq=findPlainQuestion();
     if(fq)q=fq.text;
    }
-   return {question:q||"(soal tidak terdeteksi otomatis)",options,kind:"radio"};
+   return {
+    question:q||"(soal tidak terdeteksi otomatis)",
+    options,kind:"radio",
+    images:collectImagesNear(common)
+   };
   }
  }
 
+ // ── 2. Select dropdown ──
  const selects=[...document.querySelectorAll("select")].filter(s=>isVisible(s));
  for(const sel of selects){
   const opts=[...sel.options]
@@ -597,9 +591,14 @@ function scrapeQuestion(){
    const fq=findPlainQuestion();
    if(fq)q=fq.text;
   }
-  return {question:q||"(soal tidak terdeteksi otomatis)",options:opts,kind:"select"};
+  return {
+   question:q||"(soal tidak terdeteksi otomatis)",
+   options:opts,kind:"select",
+   images:collectImagesNear(sel.parentElement)
+  };
  }
 
+ // ── 3. Class-based MC ──
  const qSelectors=[
   '[class*="question" i]','[class*="prompt" i]','[class*="stem" i]',
   '.qtext','[data-testid*="question"]'
@@ -629,14 +628,20 @@ function scrapeQuestion(){
   return {
    question:norm(qEl.innerText),
    options:oEls.map(e=>({text:norm(e.innerText),el:e})),
-   kind:"class"
+   kind:"class",
+   images:collectImagesNear(qEl.parentElement)
   };
  }
 
+ // ── 4. Plain ──
  const plain=findPlainQuestion();
  if(plain){
   const field=findAnswerField();
-  return {question:plain.text, options:[], kind:"plain", field};
+  return {
+   question:plain.text,
+   options:[],kind:"plain",field,
+   images:collectImagesNear(plain.el.parentElement)
+  };
  }
 
  return null;
@@ -703,10 +708,32 @@ function fillField(field,text){
 }
 
 /* ═══════════════════════════════════════════════
-   ANALISA
+   MULTIMODAL BUILDER
+   ═══════════════════════════════════════════════ */
+
+function buildContent(text,images){
+ if(!images||!images.length)return text;
+ const parts=[{type:"text",text}];
+ for(const img of images){
+  if(!img.src)continue;
+  parts.push({ type:"image_url", image_url:{ url:img.src } });
+ }
+ return parts;
+}
+
+/* ═══════════════════════════════════════════════
+   ANALISA (gated)
    ═══════════════════════════════════════════════ */
 
 async function analyze(){
+ if(!isUnlocked()){
+  showPanel();
+  lock.style.display="flex";
+  shakeLock();
+  setTimeout(()=>keyInput.focus(),400);
+  return;
+ }
+
  if(analyzeBtn.disabled)return;
  clearHighlight();
 
@@ -721,34 +748,44 @@ async function analyze(){
  }
 
  const hasChoices=Array.isArray(scraped.options)&&scraped.options.length>=2;
+ const hasImages=Array.isArray(scraped.images)&&scraped.images.length>0;
  const LETTERS="ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
- // pesan soal terdeteksi
- const detectMsg = hasChoices
-   ? `🔍 Soal terdeteksi (${scraped.options.length} pilihan):\n\n${scraped.question}\n\n`+
-     scraped.options.map((o,i)=>`${LETTERS[i]}. ${o.text}`).join("\n")
-   : `🔍 Soal terdeteksi (tanpa pilihan):\n\n${scraped.question}`;
- addMessage(detectMsg, "user");
+ const userBubble=addMessage(
+  (hasChoices
+   ?`🔍 Soal terdeteksi (${scraped.options.length} pilihan):\n\n${scraped.question}\n\n`+
+    scraped.options.map((o,i)=>`${LETTERS[i]}. ${o.text}`).join("\n")
+   :`🔍 Soal terdeteksi (tanpa pilihan):\n\n${scraped.question}`)
+  +(hasImages?`\n\n🖼 ${scraped.images.length} gambar terdeteksi di soal` : ""),
+  "user"
+ );
+
+ if(hasImages){
+  for(const img of scraped.images){
+   try{
+    const t=document.createElement("img");
+    t.className="thumb";
+    t.src=img.src;
+    t.alt=img.alt||"";
+    userBubble.appendChild(t);
+   }catch(_){}
+  }
+ }
 
  analyzeBtn.disabled=true;
  analyzeBtn.textContent="…";
 
- // deteksi gambar dulu
- const images = await findQuestionImages();
-
- if(images.length > 0){
-  const badge = document.createElement("div");
-  badge.className = "img-badge";
-  badge.textContent = `🖼️ ${images.length} gambar ikut dianalisa`;
-  chat.lastElementChild.appendChild(badge);
-
-  for(const im of images) highlight(im.el);
- }
-
- const waiting=addMessage("Menganalisa soal…","ai");
+ const waiting=addMessage(
+  hasImages?"Menganalisa soal + gambar…":"Menganalisa soal…",
+  "ai"
+ );
 
  try{
-  let prompt,parsedShort=null;
+  let prompt;
+
+  const imgNote=hasImages
+   ?`\n\nCATATAN: Soal ini menyertakan ${scraped.images.length} gambar. Amati setiap gambar terlampir dengan teliti, sebutkan secara singkat apa isi/gambarnya, lalu gunakan informasinya untuk menjawab.`
+   :"";
 
   if(hasChoices){
    const optBlock=scraped.options.map((o,i)=>`${LETTERS[i]}. ${o.text}`).join("\n");
@@ -756,8 +793,10 @@ async function analyze(){
     `Kamu adalah asisten yang menganalisa soal pilihan ganda.\n`+
     `Tentukan jawaban yang paling benar.\n\n`+
     `SOAL:\n${scraped.question}\n\n`+
-    `PILIHAN:\n${optBlock}\n\n`+
-    `Jawab dengan format persis:\n`+
+    `PILIHAN:\n${optBlock}`+
+    imgNote+
+    `\n\nJawab dengan format persis:\n`+
+    `GAMBAR: <deskripsi singkat gambar, atau "-" jika tidak ada>\n`+
     `JAWABAN: <satu huruf>\n`+
     `ALASAN: <penjelasan singkat 1-2 kalimat>`;
   }else{
@@ -765,17 +804,182 @@ async function analyze(){
     `Kamu adalah asisten yang menjawab soal.\n`+
     `Soal berikut adalah soal isian/uraian (BUKAN pilihan ganda).\n`+
     `Tentukan jawaban yang paling benar.\n\n`+
-    `SOAL:\n${scraped.question}\n\n`+
-    `Jawab dengan format persis:\n`+
+    `SOAL:\n${scraped.question}`+
+    imgNote+
+    `\n\nJawab dengan format persis:\n`+
+    `GAMBAR: <deskripsi singkat gambar, atau "-" jika tidak ada>\n`+
     `JAWABAN: <jawaban singkat yang benar>\n`+
     `PENJELASAN: <penjelasan 1-2 kalimat>`;
   }
 
-  // tambahan instruksi kalau ada gambar
-  if(images.length > 0){
-   prompt += `\n\nCATATAN: Ada ${images.length} gambar terlampir. `+
-             `Analisa gambar tersebut (diagram/grafik/peta/tabel) `+
-             `dan gunakan informasinya untuk menjawab soal.`;
+  const body={
+   messages:[{
+    role:"user",
+    content:buildContent(prompt,scraped.images||[])
+   }]
+  };
+
+  const response=await fetch(
+   "http://127.0.0.1:3000/api/chat",
+   {
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body:JSON.stringify(body)
+   }
+  );
+
+  const data=await response.json();
+  if(!response.ok)throw new Error(data.error||"Request gagal");
+  if(!data.answer)throw new Error("Jawaban AI kosong");
+
+  const ans=String(data.answer).trim();
+  waiting.textContent=ans;
+
+  if(hasChoices){
+   const m=ans.match(/JAWABAN\s*[:\-]\s*([A-Za-z])\b/);
+   if(m){
+    const letter=m[1].toUpperCase();
+    const idx=LETTERS.indexOf(letter);
+    if(idx>=0&&idx<scraped.options.length){
+     const chosen=scraped.options[idx];
+     highlight(chosen.el);
+
+     const wrap=document.createElement("div");
+     wrap.style.marginTop="6px";
+     const btn=document.createElement("button");
+     btn.className="pick";
+     btn.textContent=`✓ Pilih ${letter}`;
+     btn.onclick=()=>clickOption(chosen.el);
+     wrap.appendChild(btn);
+     waiting.appendChild(wrap);
+     chat.scrollTop=chat.scrollHeight;
+    }
+   }
+  }else{
+   const mj=ans.match(/JAWABAN\s*[:\-]\s*([^\n]+)/i);
+   let shortText=null;
+   if(mj)shortText=mj[1].trim().replace(/^["'`]|["'`]$/g,"");
+   if(shortText&&scraped.field){
+    const wrap=document.createElement("div");
+    wrap.style.marginTop="6px";
+    const btn=document.createElement("button");
+    btn.className="pick";
+    btn.textContent=`✓ Isi jawaban ke kolom`;
+    btn.onclick=()=>{
+     const ok=fillField(scraped.field,shortText);
+     if(ok)highlight(scraped.field);
+    };
+    wrap.appendChild(btn);
+    waiting.appendChild(wrap);
+    chat.scrollTop=chat.scrollHeight;
+   }
   }
 
-  // susun content (vision f
+ }catch(error){
+  waiting.textContent="Error: "+error.message;
+ }finally{
+  analyzeBtn.disabled=false;
+  analyzeBtn.textContent="🔍";
+  chat.scrollTop=chat.scrollHeight;
+ }
+}
+
+analyzeBtn.onclick=analyze;
+
+/* ═══════════════════════════════════════════════
+   CHAT BIASA (gated)
+   ═══════════════════════════════════════════════ */
+
+async function ask(){
+ if(!isUnlocked()){
+  showPanel();
+  lock.style.display="flex";
+  shakeLock();
+  setTimeout(()=>keyInput.focus(),400);
+  return;
+ }
+
+ const text=input.value.trim();
+ if(!text||send.disabled)return;
+
+ input.value="";
+ addMessage(text,"user");
+
+ history.push({ role:"user", content:text });
+ history=history.slice(-10);
+
+ send.disabled=true;
+ send.textContent="MENGHUBUNGKAN...";
+
+ const waiting=addMessage("Sedang berpikir...","ai");
+
+ try{
+  const response=await fetch(
+   "http://127.0.0.1:3000/api/chat",
+   {
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body:JSON.stringify({ messages:history })
+   }
+  );
+
+  const data=await response.json();
+  if(!response.ok)throw new Error(data.error||"Request gagal");
+  if(!data.answer)throw new Error("Jawaban AI kosong");
+
+  waiting.textContent=data.answer;
+
+  history.push({ role:"assistant", content:data.answer });
+  history=history.slice(-10);
+
+ }catch(error){
+  waiting.textContent="Error: "+error.message;
+  history.pop();
+
+ }finally{
+  send.disabled=false;
+  send.textContent="✦ KIRIM PESAN";
+  chat.scrollTop=chat.scrollHeight;
+ }
+}
+
+send.onclick=ask;
+
+input.onkeydown=e=>{
+ if(e.key==="Enter"&&(e.ctrlKey||e.metaKey)){
+  e.preventDefault();
+  ask();
+ }
+};
+
+// DRAG
+const header=$("header");
+let dragging=false;
+let offsetX=0;
+let offsetY=0;
+
+header.onpointerdown=e=>{
+ if(e.target.closest("button"))return;
+ const rect=panel.getBoundingClientRect();
+ dragging=true;
+ offsetX=e.clientX-rect.left;
+ offsetY=e.clientY-rect.top;
+ header.setPointerCapture(e.pointerId);
+};
+
+header.onpointermove=e=>{
+ if(!dragging)return;
+ const maxX=window.innerWidth-panel.offsetWidth;
+ const maxY=window.innerHeight-panel.offsetHeight;
+ const x=Math.max(0,Math.min(maxX,e.clientX-offsetX));
+ const y=Math.max(0,Math.min(maxY,e.clientY-offsetY));
+ panel.style.left=x+"px";
+ panel.style.top=y+"px";
+ panel.style.right="auto";
+ panel.style.bottom="auto";
+};
+
+header.onpointerup=()=>{ dragging=false; };
+header.onpointercancel=()=>{ dragging=false; };
+
+})();
