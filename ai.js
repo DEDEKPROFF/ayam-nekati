@@ -101,6 +101,12 @@ input{width:100%;accent-color:#c084fc}
  align-self:flex-end;
 }
 
+.thumb{
+ display:block;margin-top:6px;max-width:100%;
+ max-height:120px;border-radius:6px;
+ border:1px solid #a855f7;
+}
+
 textarea{
  height:65px;min-height:50px;resize:vertical;
  background:#13091f;color:white;
@@ -179,7 +185,7 @@ button:disabled{opacity:.5}
    <div class="msg ai">
     Halo! ✦ Aku tutor belajar AI.
     Masukkan soal latihan atau materi yang ingin kamu pahami.
-    Klik 🔍 untuk analisa soal di tab ini (pilihan ganda / isian / uraian).
+    Klik 🔍 untuk analisa soal di tab ini (pilihan ganda / isian / uraian + gambar).
    </div>
   </div>
 
@@ -291,7 +297,6 @@ function getRadioLabel(r){
  return norm(t);
 }
 
-/* cari teks soal generik */
 function findPlainQuestion(){
  const selectors=[
   '[class*="question" i]','[class*="prompt" i]','[class*="stem" i]',
@@ -305,14 +310,13 @@ function findPlainQuestion(){
    if(t.length<12||t.length>800)continue;
    if(!isVisible(el))continue;
    if(looksLikeNav(t))continue;
-   if(s==="p"&&!/[?.]/.test(t))continue; // paragraf tanpa tanda tanya = skip
+   if(s==="p"&&!/[?.]/.test(t))continue;
    return {el,text:t};
   }
  }
  return null;
 }
 
-/* field isian/uraian untuk diisi jawaban */
 function findAnswerField(){
  const nodes=[
   ...document.querySelectorAll('textarea'),
@@ -328,7 +332,84 @@ function findAnswerField(){
 }
 
 /* ═══════════════════════════════════════════════
-   SCRAPER — soal + pilihan (kalau ada)
+   IMAGE COLLECTION
+   ═══════════════════════════════════════════════ */
+
+const MAX_DATA_URL = 1_500_000; // ~1.5MB, batas payload
+
+function svgToDataUrl(svgEl){
+ try{
+  const clone=svgEl.cloneNode(true);
+  const xml=new XMLSerializer().serializeToString(clone);
+  const b64=btoa(unescape(encodeURIComponent(xml)));
+  return "data:image/svg+xml;base64,"+b64;
+ }catch(_){ return ""; }
+}
+
+function absUrl(u){
+ if(!u)return "";
+ if(u.startsWith("data:")||u.startsWith("http://")||u.startsWith("https://"))return u;
+ try{ return new URL(u,location.href).href; }catch(_){ return ""; }
+}
+
+function collectImagesNear(el, limit=4){
+ const out=[];
+ const seen=new Set();
+
+ const push=(src,alt)=>{
+  if(!src||seen.has(src))return;
+  if(src.length>MAX_DATA_URL)return;
+  seen.add(src);
+  out.push({src,alt:norm(alt)});
+ };
+
+ const scanNode=(node)=>{
+  if(!node||!node.querySelectorAll)return;
+
+  // <img>
+  for(const img of node.querySelectorAll("img")){
+   if(!isVisible(img))continue;
+   const r=img.getBoundingClientRect();
+   if(r.width<32&&r.height<32)continue;
+   const src=img.currentSrc||img.src||img.getAttribute("data-src")||"";
+   push(absUrl(src),img.alt||img.title||"");
+  }
+  // <svg>
+  for(const svg of node.querySelectorAll("svg")){
+   if(!isVisible(svg))continue;
+   const r=svg.getBoundingClientRect();
+   if(r.width<32&&r.height<32)continue;
+   push(svgToDataUrl(svg),svg.getAttribute("aria-label")||"");
+  }
+  // <canvas>
+  for(const c of node.querySelectorAll("canvas")){
+   if(!isVisible(c))continue;
+   const r=c.getBoundingClientRect();
+   if(r.width<32&&r.height<32)continue;
+   try{ push(c.toDataURL("image/png"),""); }catch(_){}
+  }
+  // background-image pada div
+  for(const d of node.querySelectorAll("div,span,section")){
+   if(!isVisible(d))continue;
+   const bg=getComputedStyle(d).backgroundImage;
+   if(!bg||bg==="none")continue;
+   const m=bg.match(/url\(["']?([^"')]+)["']?\)/);
+   if(!m)continue;
+   const r=d.getBoundingClientRect();
+   if(r.width<64||r.height<64)continue;
+   push(absUrl(m[1]),"");
+  }
+ };
+
+ scanNode(el);
+ // jaga-jaga, scan sibling terdekat dari parent (beberapa quiz taruh gambar di sibling)
+ if(el&&el.parentElement)scanNode(el.parentElement);
+
+ return out.slice(0,limit);
+}
+
+/* ═══════════════════════════════════════════════
+   SCRAPER
    ═══════════════════════════════════════════════ */
 
 function scrapeQuestion(){
@@ -364,7 +445,8 @@ function scrapeQuestion(){
    }
    return {
     question:q||"(soal tidak terdeteksi otomatis)",
-    options,kind:"radio"
+    options,kind:"radio",
+    images:collectImagesNear(common)
    };
   }
  }
@@ -389,7 +471,6 @@ function scrapeQuestion(){
    while(p&&!q){
     const t=norm(p.innerText);
     if(t.length>8&&t.length<800){
-     // buang teks opsi dari parent text
      let cleaned=t;
      for(const o of opts)cleaned=cleaned.replace(o.text,"");
      cleaned=cleaned.replace(/\s+/g," ").trim();
@@ -402,7 +483,11 @@ function scrapeQuestion(){
    const fq=findPlainQuestion();
    if(fq)q=fq.text;
   }
-  return {question:q||"(soal tidak terdeteksi otomatis)",options:opts,kind:"select"};
+  return {
+   question:q||"(soal tidak terdeteksi otomatis)",
+   options:opts,kind:"select",
+   images:collectImagesNear(sel.parentElement)
+  };
  }
 
  // ── 3. Class-based MC ──
@@ -435,15 +520,20 @@ function scrapeQuestion(){
   return {
    question:norm(qEl.innerText),
    options:oEls.map(e=>({text:norm(e.innerText),el:e})),
-   kind:"class"
+   kind:"class",
+   images:collectImagesNear(qEl.parentElement)
   };
  }
 
- // ── 4. Soal tanpa pilihan (isian / uraian / essay) ──
+ // ── 4. Plain (isian/uraian) ──
  const plain=findPlainQuestion();
  if(plain){
   const field=findAnswerField();
-  return {question:plain.text, options:[], kind:"plain", field};
+  return {
+   question:plain.text,
+   options:[],kind:"plain",field,
+   images:collectImagesNear(plain.el.parentElement)
+  };
  }
 
  return null;
@@ -510,6 +600,23 @@ function fillField(field,text){
 }
 
 /* ═══════════════════════════════════════════════
+   MULTIMODAL CONTENT BUILDER
+   ═══════════════════════════════════════════════ */
+
+function buildContent(text,images){
+ if(!images||!images.length)return text;
+ const parts=[{type:"text",text}];
+ for(const img of images){
+  if(!img.src)continue;
+  parts.push({
+   type:"image_url",
+   image_url:{ url:img.src }
+  });
+ }
+ return parts;
+}
+
+/* ═══════════════════════════════════════════════
    ANALISA
    ═══════════════════════════════════════════════ */
 
@@ -528,23 +635,46 @@ async function analyze(){
  }
 
  const hasChoices=Array.isArray(scraped.options)&&scraped.options.length>=2;
+ const hasImages=Array.isArray(scraped.images)&&scraped.images.length>0;
  const LETTERS="ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
- addMessage(
-  hasChoices
-   ? `🔍 Soal terdeteksi (${scraped.options.length} pilihan):\n\n${scraped.question}\n\n`+
-     scraped.options.map((o,i)=>`${LETTERS[i]}. ${o.text}`).join("\n")
-   : `🔍 Soal terdeteksi (tanpa pilihan):\n\n${scraped.question}`,
+ // bubble soal (user)
+ const userBubble=addMessage(
+  (hasChoices
+   ?`🔍 Soal terdeteksi (${scraped.options.length} pilihan):\n\n${scraped.question}\n\n`+
+    scraped.options.map((o,i)=>`${LETTERS[i]}. ${o.text}`).join("\n")
+   :`🔍 Soal terdeteksi (tanpa pilihan):\n\n${scraped.question}`)
+  +(hasImages?`\n\n🖼 ${scraped.images.length} gambar terdeteksi di soal` : ""),
   "user"
  );
+
+ // thumbnail gambar di bubble
+ if(hasImages){
+  for(const img of scraped.images){
+   try{
+    const t=document.createElement("img");
+    t.className="thumb";
+    t.src=img.src;
+    t.alt=img.alt||"";
+    userBubble.appendChild(t);
+   }catch(_){}
+  }
+ }
 
  analyzeBtn.disabled=true;
  analyzeBtn.textContent="…";
 
- const waiting=addMessage("Menganalisa soal…","ai");
+ const waiting=addMessage(
+  hasImages?"Menganalisa soal + gambar…":"Menganalisa soal…",
+  "ai"
+ );
 
  try{
-  let prompt,parsedLetter=null,parsedShort=null;
+  let prompt;
+
+  const imgNote=hasImages
+   ?`\n\nCATATAN: Soal ini menyertakan ${scraped.images.length} gambar. Amati setiap gambar terlampir dengan teliti, sebutkan secara singkat apa isi/gambarnya, lalu gunakan informasinya untuk menjawab.`
+   :"";
 
   if(hasChoices){
    const optBlock=scraped.options.map((o,i)=>`${LETTERS[i]}. ${o.text}`).join("\n");
@@ -552,8 +682,10 @@ async function analyze(){
     `Kamu adalah asisten yang menganalisa soal pilihan ganda.\n`+
     `Tentukan jawaban yang paling benar.\n\n`+
     `SOAL:\n${scraped.question}\n\n`+
-    `PILIHAN:\n${optBlock}\n\n`+
-    `Jawab dengan format persis:\n`+
+    `PILIHAN:\n${optBlock}`+
+    imgNote+
+    `\n\nJawab dengan format persis:\n`+
+    `GAMBAR: <deskripsi singkat gambar, atau "-" jika tidak ada>\n`+
     `JAWABAN: <satu huruf>\n`+
     `ALASAN: <penjelasan singkat 1-2 kalimat>`;
   }else{
@@ -561,18 +693,27 @@ async function analyze(){
     `Kamu adalah asisten yang menjawab soal.\n`+
     `Soal berikut adalah soal isian/uraian (BUKAN pilihan ganda).\n`+
     `Tentukan jawaban yang paling benar.\n\n`+
-    `SOAL:\n${scraped.question}\n\n`+
-    `Jawab dengan format persis:\n`+
+    `SOAL:\n${scraped.question}`+
+    imgNote+
+    `\n\nJawab dengan format persis:\n`+
+    `GAMBAR: <deskripsi singkat gambar, atau "-" jika tidak ada>\n`+
     `JAWABAN: <jawaban singkat yang benar>\n`+
     `PENJELASAN: <penjelasan 1-2 kalimat>`;
   }
+
+  const body={
+   messages:[{
+    role:"user",
+    content:buildContent(prompt,scraped.images||[])
+   }]
+  };
 
   const response=await fetch(
    "http://127.0.0.1:3000/api/chat",
    {
     method:"POST",
     headers:{ "Content-Type":"application/json" },
-    body:JSON.stringify({ messages:[{ role:"user", content:prompt }] })
+    body:JSON.stringify(body)
    }
   );
 
@@ -583,6 +724,7 @@ async function analyze(){
   const ans=String(data.answer).trim();
   waiting.textContent=ans;
 
+  // parse jawaban (MC = huruf, plain = teks)
   if(hasChoices){
    const m=ans.match(/JAWABAN\s*[:\-]\s*([A-Za-z])\b/);
    if(m){
@@ -605,17 +747,16 @@ async function analyze(){
    }
   }else{
    const mj=ans.match(/JAWABAN\s*[:\-]\s*([^\n]+)/i);
-   if(mj){
-    parsedShort=mj[1].trim().replace(/^["'`]|["'`]$/g,"");
-   }
-   if(parsedShort&&scraped.field){
+   let shortText=null;
+   if(mj)shortText=mj[1].trim().replace(/^["'`]|["'`]$/g,"");
+   if(shortText&&scraped.field){
     const wrap=document.createElement("div");
     wrap.style.marginTop="6px";
     const btn=document.createElement("button");
     btn.className="pick";
     btn.textContent=`✓ Isi jawaban ke kolom`;
     btn.onclick=()=>{
-     const ok=fillField(scraped.field,parsedShort);
+     const ok=fillField(scraped.field,shortText);
      if(ok)highlight(scraped.field);
     };
     wrap.appendChild(btn);
