@@ -1,48 +1,68 @@
-
-javascript:(()=>{if(document.getElementById('wgai-root'))return;const root=document.createElement('div');root.id='wgai-root';root.style.cssText='position:fixed;z-index:2147483647;inset:0;pointer-events:none;font-family:Arial,sans-serif;color:white';document.documentElement.appendChild(root);const style=document.createElement('style');style.textContent=`
-#wgai-root *{box-sizing:border-box}
-.wg-btn{pointer-events:auto;position:fixed;right:22px;bottom:24px;width:58px;height:58px;border:1px solid #bd83ff;border-radius:50%;background:linear-gradient(135deg,#8b35ff,#4211a5);color:white;font-size:25px;box-shadow:0 0 20px #9d4dff;cursor:pointer}
-.wg-panel{pointer-events:auto;position:fixed;right:16px;bottom:94px;width:min(365px,calc(100vw - 24px));height:min(530px,calc(100dvh - 120px));background:#100c1b;border:1px solid #8e4bdb;border-radius:17px;box-shadow:0 0 30px #7625c966;display:none;overflow:hidden}
-.wg-head{padding:15px;background:linear-gradient(110deg,#5722a0,#25113e);display:flex;justify-content:space-between;align-items:center;cursor:move}
-.wg-title{font-weight:bold;color:#e9caff;font-size:15px}.wg-sub{font-size:10px;color:#c5a0ec;margin-top:4px}
-.wg-actions button{background:#ffffff12;border:1px solid #ffffff25;color:white;border-radius:7px;padding:5px 9px;cursor:pointer}
-.wg-body{height:calc(100% - 60px);display:flex;flex-direction:column;padding:12px;gap:10px}
-.wg-status{font-size:11px;color:#b994e6}
-.wg-chat{flex:1;overflow:auto;display:flex;flex-direction:column;gap:9px;padding:3px}
-.wg-msg{padding:10px 12px;border-radius:12px;font-size:12px;line-height:1.6;white-space:pre-wrap;overflow-wrap:anywhere;max-width:95%}
-.wg-ai{background:#26183a;border:1px solid #65418a;align-self:flex-start}
-.wg-user{background:#58249a;align-self:flex-end}
-.wg-input{background:#1b1427;color:white;border:1px solid #67418c;border-radius:10px;padding:11px;width:100%;min-height:80px;resize:vertical;outline:none;font-size:12px}
-.wg-send{background:linear-gradient(100deg,#a34bff,#6524b8);border:0;color:white;border-radius:9px;padding:11px;font-weight:bold;cursor:pointer}
-.wg-foot{font-size:10px;text-align:center;color:#8e76a7}
-`;root.appendChild(style);
-const btn=document.createElement('button');btn.className='wg-btn';btn.textContent='✦';btn.title='Wayground AI';root.appendChild(btn);
-const panel=document.createElement('div');panel.className='wg-panel';panel.innerHTML=`
-<div class="wg-head"><div><div class="wg-title">✦ WAYGROUND AI</div><div class="wg-sub">PURPLE CYBERPUNK • SIMULATION</div></div><div class="wg-actions"><button id="wg-min">−</button> <button id="wg-close">×</button></div></div>
-<div class="wg-body"><div class="wg-status">● SIMULATION ENGINE ONLINE</div><div class="wg-chat" id="wg-chat"><div class="wg-msg wg-ai">Halo! Aku Wayground AI Simulation. ✨\n\nMasukkan soal latihan beserta pilihan jawabannya. Aku akan melakukan simulasi analisis dan memberikan penjelasan.</div></div><textarea id="wg-question" class="wg-input" placeholder="Masukkan soal dan pilihan A, B, C, D..."></textarea><button id="wg-send" class="wg-send">✦ ANALYZE QUESTION</button><div class="wg-foot">SIMULATION ONLY • Bukan AI/API sungguhan</div></div>`;
-root.appendChild(panel);
-const chat=panel.querySelector('#wg-chat'),input=panel.querySelector('#wg-question');
-const add=(text,cls)=>{const el=document.createElement('div');el.className='wg-msg '+cls;el.textContent=text;chat.appendChild(el);chat.scrollTop=chat.scrollHeight};
-const analyze=()=>{
-const q=input.value.trim();if(!q)return;
-add(q,'wg-user');input.value='';
-const loading=document.createElement('div');loading.className='wg-msg wg-ai';loading.textContent='⟳ Menjalankan simulasi analisis...';chat.appendChild(loading);
-setTimeout(()=>{
-loading.remove();
-const choices=q.match(/(?:^|\n)\s*([A-E])[\.\):\-]\s*(.+)/g)||[];
-const hash=[...q].reduce((a,c)=>(a*31+c.charCodeAt(0))>>>0,7);
-const answer=String.fromCharCode(65+(hash%Math.max(2,Math.min(choices.length||4,5))));
-const explanation=choices.length?'Pilihan terdeteksi:\n'+choices.map(x=>x.trim()).join('\n'):'Tidak ditemukan format pilihan ganda yang jelas.';
-add('✦ HASIL SIMULASI\n\n'+explanation+'\n\nJawaban simulasi: '+answer+'\n\nAnalisis: Sistem simulasi membuat pilihan berdasarkan pola teks, bukan pemahaman AI sebenarnya. Hasil ini BUKAN jawaban yang sudah diverifikasi.\n\nConfidence simulasi: '+(60+hash%36)+'%\n\nTips: Periksa kembali konsep dan informasi pada soal sebelum menentukan jawaban.','wg-ai');
-},1000);
+(()=>{
+if(document.getElementById("wgai"))return;
+let host=document.createElement("div");
+host.id="wgai";
+host.style="position:fixed;z-index:2147483647;inset:0;pointer-events:none";
+document.documentElement.append(host);
+let root=host.attachShadow({mode:"open"});
+root.innerHTML=`
+<style>
+*{box-sizing:border-box}
+button,textarea{font:inherit}
+.fab{pointer-events:auto;position:fixed;right:18px;bottom:20px;width:58px;height:58px;border-radius:50%;border:1px solid #d9aaff;background:linear-gradient(135deg,#bd65ff,#5811a5);color:white;font-size:25px;box-shadow:0 0 20px #a855f7;cursor:pointer}
+.panel{pointer-events:auto;display:none;position:fixed;right:12px;bottom:90px;width:min(360px,calc(100vw - 24px));height:min(560px,calc(100dvh - 110px));background:rgba(17,10,29,var(--op,1));border:1px solid #a855f7;border-radius:17px;color:white;overflow:hidden;font:13px Arial;box-shadow:0 0 25px #9333ea66}
+header{padding:15px;background:rgba(85,35,130,var(--op,1));display:flex;justify-content:space-between;cursor:move;touch-action:none}
+.body{padding:12px;height:calc(100% - 52px);display:flex;flex-direction:column;gap:10px}
+.title{color:#e8c9ff;font-weight:bold}
+.tools button{background:#ffffff20;color:white;border:0;padding:5px 9px;border-radius:6px}
+.setting{padding:9px;background:#38204b88;border-radius:9px}
+.line{display:flex;justify-content:space-between;font-size:11px}
+input{width:100%;accent-color:#bd65ff}
+.chat{flex:1;overflow:auto;display:flex;flex-direction:column;gap:8px}
+.msg{padding:10px;border-radius:10px;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.5}
+.ai{background:#38204b;align-self:flex-start}
+.user{background:#7133a8;align-self:flex-end}
+textarea{height:85px;resize:vertical;background:#251535;color:white;border:1px solid #8050a9;border-radius:9px;padding:10px}
+.send{background:linear-gradient(90deg,#bd65ff,#7025be);border:0;padding:11px;color:white;border-radius:9px;font-weight:bold}
+</style>
+<button class="fab">✦</button>
+<section class="panel">
+<header><b class="title">✦ WAYGROUND AI</b><span class="tools"><button class="min">−</button><button class="close">×</button></span></header>
+<div class="body">
+<div style="color:#c99af5;font-size:10px">PURPLE CYBERPUNK • OPENROUTER</div>
+<div class="setting"><div class="line"><span>TRANSPARANSI</span><b class="val">0%</b></div><input class="range" type="range" min="0" max="100" value="0"></div>
+<div class="chat"><div class="msg ai">Halo! Masukkan soal latihan untuk dianalisis.</div></div>
+<textarea placeholder="Tulis soal latihan..."></textarea>
+<button class="send">✦ ANALYZE</button>
+</div></section>`;
+const $=s=>root.querySelector(s);
+const panel=$(".panel"),chat=$(".chat"),input=$("textarea"),send=$(".send");
+const history=[];
+const slider=$(".range");
+slider.oninput=()=>{
+let n=+slider.value;
+$(".val").textContent=n+"%";
+panel.style.setProperty("--op",1-n/100);
 };
-btn.onclick=()=>{panel.style.display=panel.style.display==='block'?'none':'block'};
-panel.querySelector('#wg-close').onclick=()=>panel.style.display='none';
-panel.querySelector('#wg-min').onclick=()=>panel.style.display='none';
-panel.querySelector('#wg-send').onclick=analyze;
-input.addEventListener('keydown',e=>{if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)){e.preventDefault();analyze()}});
-let drag=false,dx=0,dy=0;const head=panel.querySelector('.wg-head');
-head.addEventListener('pointerdown',e=>{if(e.target.tagName==='BUTTON')return;drag=true;const r=panel.getBoundingClientRect();dx=e.clientX-r.left;dy=e.clientY-r.top;head.setPointerCapture(e.pointerId)});
-head.addEventListener('pointermove',e=>{if(!drag)return;panel.style.left=Math.max(0,Math.min(innerWidth-panel.offsetWidth,e.clientX-dx))+'px';panel.style.top=Math.max(0,Math.min(innerHeight-panel.offsetHeight,e.clientY-dy))+'px';panel.style.right='auto';panel.style.bottom='auto'});
-head.addEventListener('pointerup',()=>drag=false);
+$(".fab").onclick=()=>panel.style.display=panel.style.display==="block"?"none":"block";
+$(".close").onclick=$(".min").onclick=()=>panel.style.display="none";
+function add(t,c){let e=document.createElement("div");e.className="msg "+c;e.textContent=t;chat.append(e);chat.scrollTop=chat.scrollHeight;return e}
+async function ask(){
+let t=input.value.trim();if(!t||send.disabled)return;
+input.value="";add(t,"user");history.push({role:"user",content:t});
+send.disabled=true;send.textContent="THINKING...";
+let wait=add("Menghubungkan ke AI...","ai");
+try{
+let r=await fetch("http://127.0.0.1:3000/api/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({messages:history.slice(-10)})});
+let d=await r.json();if(!r.ok)throw Error(d.error);
+wait.textContent=d.answer;history.push({role:"assistant",content:d.answer});
+}catch(e){wait.textContent="Error: "+e.message;history.pop()}
+finally{send.disabled=false;send.textContent="✦ ANALYZE"}
+}
+send.onclick=ask;
+input.onkeydown=e=>{if(e.key==="Enter"&&(e.ctrlKey||e.metaKey)){e.preventDefault();ask()}};
+let h=$("header"),drag=false,dx=0,dy=0;
+h.onpointerdown=e=>{if(e.target.closest("button"))return;let r=panel.getBoundingClientRect();drag=true;dx=e.clientX-r.left;dy=e.clientY-r.top;h.setPointerCapture(e.pointerId)};
+h.onpointermove=e=>{if(!drag)return;panel.style.left=Math.max(0,e.clientX-dx)+"px";panel.style.top=Math.max(0,e.clientY-dy)+"px";panel.style.right="auto";panel.style.bottom="auto"};
+h.onpointerup=()=>drag=false;
 })();
