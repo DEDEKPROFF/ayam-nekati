@@ -194,6 +194,7 @@ button:disabled{opacity:.5}
   <b class="title">✦ WAYGROUND • NURRY AI (ENC)</b>
   <div class="tools">
    <button class="analyze" title="Analisa soal di tab ini">🔍</button>
+   <button class="logoutBtn" title="Logout / ganti key">🔒</button>
    <button class="settingsBtn" title="Pengaturan backend">⚙</button>
    <button class="hide" title="Sembunyikan semua">−</button>
    <button class="close" title="Tutup panel">×</button>
@@ -260,6 +261,7 @@ const input=$("textarea");
 const send=$(".send");
 const slider=$(".range");
 const analyzeBtn=$(".analyze");
+const logoutBtn=$(".logoutBtn");
 
 const lock=$(".lock");
 const keyInput=$(".keyInput");
@@ -311,6 +313,17 @@ function updateLockState(){
  lock.style.display=isUnlocked()?"none":"flex";
 }
 updateLockState();
+
+/* ─── LOGOUT ─── */
+logoutBtn.onclick=()=>{
+ try{ localStorage.removeItem(KEY_STORAGE); }catch(_){}
+ lock.style.display="flex";
+ keyInput.value="";
+ keyErr.textContent="";
+ showPanel();
+ addMessage("🔒 Logout. Masukkan key untuk lanjut.","ai");
+ setTimeout(()=>keyInput.focus(),120);
+};
 
 /* ─── API URL ─── */
 const URL_KEY="wgai_api_url";
@@ -535,7 +548,6 @@ function collectImagesNear(el, limit=4){
 /* ─── SCRAPER ─── */
 function scrapeQuestion(){
 
- // radio MC
  const radios=[...document.querySelectorAll('input[type="radio"]:not([disabled])')];
  if(radios.length>=2){
   let group=[]; let node=radios[0].parentElement;
@@ -559,7 +571,6 @@ function scrapeQuestion(){
   }
  }
 
- // select
  const selects=[...document.querySelectorAll("select")].filter(s=>isVisible(s));
  for(const sel of selects){
   const opts=[...sel.options].filter(o=>norm(o.text).length>0&&!(o.value===""&&/^--/.test(o.text))).map(o=>({text:norm(o.text),el:o}));
@@ -583,7 +594,6 @@ function scrapeQuestion(){
   return {question:q||"(soal tidak terdeteksi otomatis)",options:opts,kind:"select",images:collectImagesNear(sel.parentElement)};
  }
 
- // class-based MC
  const qSelectors=['[class*="question" i]','[class*="prompt" i]','[class*="stem" i]','.qtext','[data-testid*="question"]'];
  const oSelectors=['[class*="answer" i]','[class*="option" i]','[class*="choice" i]','[class*="benar" i]','[class*="salah" i]','[role="radio"]','[role="option"]'];
  let qEl=null;
@@ -603,7 +613,6 @@ function scrapeQuestion(){
   return {question:norm(qEl.innerText),options:oEls.map(e=>({text:norm(e.innerText),el:e})),kind:"class",images:collectImagesNear(qEl.parentElement)};
  }
 
- // plain
  const plain=findPlainQuestion();
  if(plain){
   const field=findAnswerField();
