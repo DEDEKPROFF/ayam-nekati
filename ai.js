@@ -44,13 +44,22 @@ header{
 
 .title{color:#e9c5ff;font-weight:bold;text-shadow:0 0 8px #c084fc}
 
-.tools{display:flex;gap:5px}
+.tools{display:flex;gap:5px;align-items:center}
 
 .tools button{
  background:#35164f;color:#e9c5ff;
  border:1px solid #a855f7;
  padding:4px 8px;border-radius:6px;
  cursor:pointer;font-size:12px;
+}
+
+.tools button.logoutBtn{
+ background:#4c1d95;
+ border-color:#c084fc;
+ color:#f5d0fe;
+ font-weight:bold;
+ font-size:10px;
+ letter-spacing:.5px;
 }
 
 .tools button:disabled{opacity:.5;cursor:not-allowed}
@@ -115,29 +124,6 @@ textarea:focus{border-color:#d8b4fe;box-shadow:0 0 10px #9333ea66}
 
 button:disabled{opacity:.5}
 
-.settings{
- display:none;position:absolute;inset:0;z-index:9;
- background:rgba(10,5,20,calc(var(--op,1) * .96 + .04));
- padding:14px;gap:10px;flex-direction:column;
- backdrop-filter:blur(4px);
-}
-.settings.on{display:flex}
-.settings label{color:#c084fc;font-size:10px;letter-spacing:1px}
-.settings input[type="text"]{
- padding:9px;background:#13091f;color:white;
- border:1px solid #9333ea;border-radius:8px;
- font-family:monospace;font-size:11px;outline:none;
-}
-.settings input[type="text"]:focus{border-color:#d8b4fe;box-shadow:0 0 10px #9333ea66}
-.settings .row{display:flex;gap:6px}
-.settings .row button{
- flex:1;padding:8px;border-radius:8px;
- background:linear-gradient(90deg,#9333ea,#4c1d95);
- border:1px solid #c084fc;color:white;font-weight:bold;cursor:pointer;
-}
-.settings .row button.ghost{background:#241035;border-color:#6b21a8}
-.settings .hint{font-size:9px;color:#a78bfa;line-height:1.5}
-
 .lock{
  position:absolute;inset:0;z-index:10;
  background:rgba(10,5,20,calc(var(--op,1) * .92 + .08));
@@ -191,11 +177,10 @@ button:disabled{opacity:.5}
 
 <section class="panel">
  <header>
-  <b class="title">✦ WAYGROUND • NURRY AI (ENC)</b>
+  <b class="title">✦ WAYGROUND • NURRY AI</b>
   <div class="tools">
    <button class="analyze" title="Analisa soal di tab ini">🔍</button>
-   <button class="logoutBtn" title="Logout / ganti key">🔒</button>
-   <button class="settingsBtn" title="Pengaturan backend">⚙</button>
+   <button class="logoutBtn" title="Logout / ganti key">Logout</button>
    <button class="hide" title="Sembunyikan semua">−</button>
    <button class="close" title="Tutup panel">×</button>
   </div>
@@ -210,18 +195,6 @@ button:disabled{opacity:.5}
           autocomplete="off" spellcheck="false" autocapitalize="off" autocorrect="off" />
    <button class="keyBtn">🔓 Akses</button>
    <div class="keyErr"></div>
-  </div>
-
-  <div class="settings">
-   <label>URL BACKEND</label>
-   <input class="urlInput" type="text" placeholder="http://127.0.0.1:3000/api/chat" />
-   <div class="row">
-    <button class="saveUrl">SIMPAN</button>
-    <button class="ghost closeSettings">TUTUP</button>
-   </div>
-   <div class="hint">
-    Kalau backend di PC, ganti 127.0.0.1 dengan IP LAN PC-mu (contoh: http://192.168.1.5:3000/api/chat). Pastikan HP & PC di WiFi yang sama.
-   </div>
   </div>
 
   <div class="subtitle">AKSES WAYGROUND ONLY | BY NURRY</div>
@@ -267,12 +240,6 @@ const lock=$(".lock");
 const keyInput=$(".keyInput");
 const keyBtn=$(".keyBtn");
 const keyErr=$(".keyErr");
-
-const settings=$(".settings");
-const settingsBtn=$(".settingsBtn");
-const urlInput=$(".urlInput");
-const saveUrl=$(".saveUrl");
-const closeSettings=$(".closeSettings");
 
 let history=[];
 let lastHighlighted=[];
@@ -325,13 +292,8 @@ logoutBtn.onclick=()=>{
  setTimeout(()=>keyInput.focus(),120);
 };
 
-/* ─── API URL ─── */
-const URL_KEY="wgai_api_url";
-const DEFAULT_URL="http://127.0.0.1:3000/api/chat";
-function getApiUrl(){
- try{ return localStorage.getItem(URL_KEY)||DEFAULT_URL; }
- catch(_){ return DEFAULT_URL; }
-}
+/* ─── API URL (fixed) ─── */
+const API_URL="http://127.0.0.1:3000/api/chat";
 
 /* ─── PANEL SHOW/HIDE ─── */
 function showPanel(){
@@ -365,20 +327,6 @@ slider.oninput=()=>{
  panel.style.setProperty("--op",1-n/100);
 };
 
-/* ─── SETTINGS ─── */
-settingsBtn.onclick=()=>{
- urlInput.value=getApiUrl();
- settings.classList.add("on");
-};
-closeSettings.onclick=()=>settings.classList.remove("on");
-saveUrl.onclick=()=>{
- const v=urlInput.value.trim();
- if(!v)return;
- try{ localStorage.setItem(URL_KEY,v); }catch(_){}
- settings.classList.remove("on");
- addMessage("✓ URL backend disimpan: "+v,"ai");
-};
-
 /* ─── MESSAGES ─── */
 function addMessage(text,type){
  const el=document.createElement("div");
@@ -389,19 +337,17 @@ function addMessage(text,type){
  return el;
 }
 
-/* ─── FETCH AI (safe) ─── */
+/* ─── FETCH AI ─── */
 async function fetchAI(payload){
- const url=getApiUrl();
-
  let response;
  try{
-  response=await fetch(url,{
+  response=await fetch(API_URL,{
    method:"POST",
    headers:{ "Content-Type":"application/json" },
    body:JSON.stringify(payload)
   });
  }catch(e){
-  throw new Error("Gagal konek ke "+url+" — cek backend & URL di ⚙ ("+e.message+")");
+  throw new Error("Gagal konek ke "+API_URL+" ("+e.message+")");
  }
 
  let raw="";
@@ -409,17 +355,17 @@ async function fetchAI(payload){
  catch(e){ throw new Error("Gagal baca respons: "+e.message); }
 
  if(!raw||!raw.trim()){
-  throw new Error("Server balas kosong (status "+response.status+"). Backend mungkin crash.");
+  throw new Error("Server balas kosong (status "+response.status+").");
  }
 
  let data;
  try{ data=JSON.parse(raw); }
  catch(e){
-  throw new Error("Respons bukan JSON valid (status "+response.status+"): "+raw.slice(0,120).replace(/\s+/g," "));
+  throw new Error("Respons bukan JSON (status "+response.status+"): "+raw.slice(0,120).replace(/\s+/g," "));
  }
 
  if(!response.ok){ throw new Error(data.error||("HTTP "+response.status)); }
- if(!data.answer){ throw new Error("Field 'answer' kosong di respons."); }
+ if(!data.answer){ throw new Error("Field 'answer' kosong."); }
  return String(data.answer).trim();
 }
 
@@ -692,7 +638,7 @@ async function analyze(){
 
  const scraped=scrapeQuestion();
  if(!scraped||!scraped.question){
-  addMessage("❌ Tidak bisa mendeteksi soal di tab ini. Pastikan teks soal tampil di halaman.","ai");
+  addMessage("❌ Tidak bisa mendeteksi soal di tab ini.","ai");
   return;
  }
 
@@ -703,7 +649,7 @@ async function analyze(){
  const userBubble=addMessage(
   (hasChoices
    ?`🔍 Soal terdeteksi (${scraped.options.length} pilihan):\n\n${scraped.question}\n\n`+scraped.options.map((o,i)=>`${LETTERS[i]}. ${o.text}`).join("\n")
-   :`🔍 Soal terdeteksi (tanpa pilihan):\n\n${scraped.question}`)
+   :`🔍 Soal terdeteksi:\n\n${scraped.question}`)
   +(hasImages?`\n\n🖼 ${scraped.images.length} gambar terdeteksi di soal`:""),
   "user"
  );
