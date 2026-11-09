@@ -141,6 +141,60 @@ button:disabled{opacity:.5}
  -webkit-tap-highlight-color:transparent;
 }
 
+/* ── LOGIN GATE ── */
+.login-gate{
+ pointer-events:auto;position:fixed;inset:0;
+ background:rgba(5,2,12,.92);
+ backdrop-filter:blur(6px);
+ display:flex;align-items:center;justify-content:center;
+ z-index:2147483646;
+}
+.login-box{
+ width:min(340px,calc(100vw - 40px));
+ background:linear-gradient(160deg,#1a0b2e,#0a0514);
+ border:1px solid #a855f7;border-radius:16px;
+ padding:24px 20px;color:white;font:13px Arial;
+ text-align:center;
+ box-shadow:0 0 25px #9333ea88,0 0 60px #581c8755;
+ animation:appear .3s ease;
+}
+.login-box h2{
+ margin:0 0 6px;color:#e9c5ff;
+ font-size:18px;text-shadow:0 0 10px #c084fc;
+}
+.login-box p{
+ margin:0 0 18px;color:#c084fc;font-size:11px;
+ letter-spacing:1px;
+}
+.login-box input{
+ width:100%;padding:11px;border-radius:9px;
+ background:#13091f;color:white;
+ border:1px solid #9333ea;outline:none;
+ text-align:center;letter-spacing:2px;
+ font-size:14px;margin-bottom:10px;
+}
+.login-box input:focus{
+ border-color:#d8b4fe;
+ box-shadow:0 0 12px #9333ea66;
+}
+.login-box button{
+ width:100%;padding:11px;border-radius:9px;
+ background:linear-gradient(90deg,#9333ea,#4c1d95);
+ border:1px solid #c084fc;color:white;
+ font-weight:bold;cursor:pointer;
+ box-shadow:0 0 12px #9333ea66;
+}
+.login-box .err{
+ color:#f87171;font-size:11px;
+ min-height:14px;margin-top:6px;
+}
+.logout{
+ background:#35164f;color:#e9c5ff;
+ border:1px solid #a855f7;
+ padding:4px 8px;border-radius:6px;
+ cursor:pointer;font-size:10px;
+}
+
 @keyframes glow{
  from{box-shadow:0 0 7px #9333ea}
  to{box-shadow:0 0 20px #c084fc,0 0 35px #7e22ce}
@@ -159,6 +213,7 @@ button:disabled{opacity:.5}
   <b class="title">✦ WAYGROUND AI</b>
   <div class="tools">
    <button class="analyze" title="Analisa soal di tab ini">🔍</button>
+   <button class="logout" title="Logout">⎋</button>
    <button class="hide" title="Sembunyikan semua">−</button>
    <button class="close" title="Tutup panel">×</button>
   </div>
@@ -190,6 +245,16 @@ button:disabled{opacity:.5}
 </section>
 
 <div class="restore" title=""></div>
+
+<div class="login-gate">
+ <div class="login-box">
+  <h2>✦ WAYGROUND AI</h2>
+  <p>MASUKKAN KEY UNTUK AKSES</p>
+  <input class="key-input" type="password" placeholder="KEY LOGIN" autocomplete="off">
+  <button class="key-submit">🔓 BUKA AKSES</button>
+  <div class="err"></div>
+ </div>
+</div>
 `;
 
 const $=s=>root.querySelector(s);
@@ -206,6 +271,64 @@ const analyzeBtn=$(".analyze");
 let history=[];
 let lastHighlighted=[];
 
+/* ═══════════════════════════════════════════════
+   KEY LOGIN SYSTEM
+   ═══════════════════════════════════════════════ */
+const VALID_KEY = "voxel";
+const STORAGE_KEY = "wgai_auth";
+
+const loginGate = $(".login-gate");
+const keyInput = $(".key-input");
+const keySubmit = $(".key-submit");
+const errEl = $(".err");
+const logoutBtn = $(".logout");
+
+let isAuthed = false;
+
+function unlockUI(){
+ isAuthed = true;
+ loginGate.style.display = "none";
+ fab.style.display = "";
+}
+function lockUI(){
+ isAuthed = false;
+ loginGate.style.display = "flex";
+ fab.style.display = "none";
+ panel.style.display = "none";
+ restore.style.display = "none";
+}
+function tryLogin(){
+ const val = keyInput.value.trim().toLowerCase();
+ if(!val){ errEl.textContent = "Key tidak boleh kosong"; return; }
+ if(val === VALID_KEY){
+  errEl.textContent = "";
+  localStorage.setItem(STORAGE_KEY, "1");
+  unlockUI();
+  addMessage("🔓 Akses terbuka. Selamat belajar! ✦", "ai");
+ }else{
+  errEl.textContent = "❌ Key salah. Coba lagi.";
+  keyInput.value = "";
+  keyInput.focus();
+ }
+}
+keySubmit.onclick = tryLogin;
+keyInput.onkeydown = e => {
+ if(e.key === "Enter"){ e.preventDefault(); tryLogin(); }
+};
+logoutBtn.onclick = () => {
+ localStorage.removeItem(STORAGE_KEY);
+ lockUI();
+ keyInput.value = "";
+ errEl.textContent = "";
+};
+
+if(localStorage.getItem(STORAGE_KEY) === "1"){ unlockUI(); }
+else{ lockUI(); }
+
+/* ═══════════════════════════════════════════════
+   PANEL CONTROL
+   ═══════════════════════════════════════════════ */
+
 function showPanel(){ panel.style.display="block"; }
 function hidePanel(){ panel.style.display="none"; }
 
@@ -221,6 +344,7 @@ function showAll(){
 }
 
 fab.onclick=()=>{
+ if(!isAuthed){ lockUI(); return; }
  if(panel.style.display==="block")hidePanel();
  else showPanel();
 };
@@ -291,7 +415,6 @@ function getRadioLabel(r){
  return norm(t);
 }
 
-/* cari teks soal generik */
 function findPlainQuestion(){
  const selectors=[
   '[class*="question" i]','[class*="prompt" i]','[class*="stem" i]',
@@ -305,14 +428,13 @@ function findPlainQuestion(){
    if(t.length<12||t.length>800)continue;
    if(!isVisible(el))continue;
    if(looksLikeNav(t))continue;
-   if(s==="p"&&!/[?.]/.test(t))continue; // paragraf tanpa tanda tanya = skip
+   if(s==="p"&&!/[?.]/.test(t))continue;
    return {el,text:t};
   }
  }
  return null;
 }
 
-/* field isian/uraian untuk diisi jawaban */
 function findAnswerField(){
  const nodes=[
   ...document.querySelectorAll('textarea'),
@@ -328,12 +450,10 @@ function findAnswerField(){
 }
 
 /* ═══════════════════════════════════════════════
-   SCRAPER — soal + pilihan (kalau ada)
+   SCRAPER
    ═══════════════════════════════════════════════ */
 
 function scrapeQuestion(){
-
- // ── 1. Radio MC ──
  const radios=[...document.querySelectorAll('input[type="radio"]:not([disabled])')];
  if(radios.length>=2){
   let group=[];
@@ -362,14 +482,10 @@ function scrapeQuestion(){
     const fq=findPlainQuestion();
     if(fq)q=fq.text;
    }
-   return {
-    question:q||"(soal tidak terdeteksi otomatis)",
-    options,kind:"radio"
-   };
+   return {question:q||"(soal tidak terdeteksi otomatis)",options,kind:"radio"};
   }
  }
 
- // ── 2. Select dropdown ──
  const selects=[...document.querySelectorAll("select")].filter(s=>isVisible(s));
  for(const sel of selects){
   const opts=[...sel.options]
@@ -389,7 +505,6 @@ function scrapeQuestion(){
    while(p&&!q){
     const t=norm(p.innerText);
     if(t.length>8&&t.length<800){
-     // buang teks opsi dari parent text
      let cleaned=t;
      for(const o of opts)cleaned=cleaned.replace(o.text,"");
      cleaned=cleaned.replace(/\s+/g," ").trim();
@@ -405,7 +520,6 @@ function scrapeQuestion(){
   return {question:q||"(soal tidak terdeteksi otomatis)",options:opts,kind:"select"};
  }
 
- // ── 3. Class-based MC ──
  const qSelectors=[
   '[class*="question" i]','[class*="prompt" i]','[class*="stem" i]',
   '.qtext','[data-testid*="question"]'
@@ -439,7 +553,6 @@ function scrapeQuestion(){
   };
  }
 
- // ── 4. Soal tanpa pilihan (isian / uraian / essay) ──
  const plain=findPlainQuestion();
  if(plain){
   const field=findAnswerField();
@@ -544,7 +657,7 @@ async function analyze(){
  const waiting=addMessage("Menganalisa soal…","ai");
 
  try{
-  let prompt,parsedLetter=null,parsedShort=null;
+  let prompt,parsedShort=null;
 
   if(hasChoices){
    const optBlock=scraped.options.map((o,i)=>`${LETTERS[i]}. ${o.text}`).join("\n");
@@ -633,13 +746,17 @@ async function analyze(){
  }
 }
 
-analyzeBtn.onclick=analyze;
+analyzeBtn.onclick=()=>{
+ if(!isAuthed){ lockUI(); return; }
+ analyze();
+};
 
 /* ═══════════════════════════════════════════════
    CHAT BIASA
    ═══════════════════════════════════════════════ */
 
 async function ask(){
+ if(!isAuthed){ lockUI(); return; }
  const text=input.value.trim();
  if(!text||send.disabled)return;
 
