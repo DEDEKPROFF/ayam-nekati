@@ -121,6 +121,17 @@ textarea:focus{
 
 button:disabled{opacity:.5}
 
+/* invisible restore hit-zone — bottom-right corner */
+.restore{
+ pointer-events:auto;position:fixed;
+ right:0;bottom:0;
+ width:64px;height:64px;
+ background:transparent;
+ display:none;
+ cursor:pointer;
+ -webkit-tap-highlight-color:transparent;
+}
+
 @keyframes glow{
  from{box-shadow:0 0 7px #9333ea}
  to{box-shadow:0 0 20px #c084fc,0 0 35px #7e22ce}
@@ -138,7 +149,7 @@ button:disabled{opacity:.5}
  <header>
   <b class="title">✦ WAYGROUND AI</b>
   <div class="tools">
-   <button class="hide" title="Sembunyikan panel">−</button>
+   <button class="hide" title="Sembunyikan semua (tap pojok kanan bawah untuk munculkan)">−</button>
    <button class="close" title="Tutup panel">×</button>
   </div>
  </header>
@@ -166,11 +177,15 @@ button:disabled{opacity:.5}
   <button class="send">✦ KIRIM PESAN</button>
  </div>
 </section>
+
+<div class="restore" title=""></div>
 `;
 
 const $=s=>root.querySelector(s);
 
 const panel=$(".panel");
+const fab=$(".fab");
+const restore=$(".restore");
 const chat=$(".chat");
 const input=$("textarea");
 const send=$(".send");
@@ -178,21 +193,30 @@ const slider=$(".range");
 
 let history=[];
 
-function showPanel(){
- panel.style.display="block";
-}
+function showPanel(){ panel.style.display="block"; }
+function hidePanel(){ panel.style.display="none"; }
 
-function hidePanel(){
+/* --- hide-all / restore-all --- */
+function hideAll(){
  panel.style.display="none";
+ fab.style.display="none";
+ restore.style.display="block";
 }
 
-$(".fab").onclick=()=>{
+function showAll(){
+ fab.style.display="";
+ panel.style.display="block";
+ restore.style.display="none";
+}
+
+fab.onclick=()=>{
  if(panel.style.display==="block")hidePanel();
  else showPanel();
 };
 
-$(".hide").onclick=hidePanel;
-$(".close").onclick=hidePanel;
+$(".hide").onclick=hideAll;   // − : semuanya ilang
+$(".close").onclick=hidePanel; // × : tutup panel aja
+restore.onclick=showAll;       // pojok kanan bawah : munculin semua
 
 slider.oninput=()=>{
  const n=Number(slider.value);
@@ -217,11 +241,7 @@ async function ask(){
  input.value="";
  addMessage(text,"user");
 
- history.push({
-  role:"user",
-  content:text
- });
-
+ history.push({ role:"user", content:text });
  history=history.slice(-10);
 
  send.disabled=true;
@@ -234,12 +254,8 @@ async function ask(){
    "http://127.0.0.1:3000/api/chat",
    {
     method:"POST",
-    headers:{
-     "Content-Type":"application/json"
-    },
-    body:JSON.stringify({
-     messages:history
-    })
+    headers:{ "Content-Type":"application/json" },
+    body:JSON.stringify({ messages:history })
    }
   );
 
@@ -255,11 +271,7 @@ async function ask(){
 
   waiting.textContent=data.answer;
 
-  history.push({
-   role:"assistant",
-   content:data.answer
-  });
-
+  history.push({ role:"assistant", content:data.answer });
   history=history.slice(-10);
 
  }catch(error){
@@ -315,12 +327,7 @@ header.onpointermove=e=>{
  panel.style.bottom="auto";
 };
 
-header.onpointerup=()=>{
- dragging=false;
-};
-
-header.onpointercancel=()=>{
- dragging=false;
-};
+header.onpointerup=()=>{ dragging=false; };
+header.onpointercancel=()=>{ dragging=false; };
 
 })();
