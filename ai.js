@@ -147,7 +147,7 @@ button:disabled{opacity:.5}
 
 <section class="panel">
  <header>
-  <b class="title">✦ WAYGROUND AI</b>
+  <b class="title">✦ Menu Panel</b>
   <div class="tools">
    <button class="hide" title="Sembunyikan semua (tap pojok kanan bawah untuk munculkan)">−</button>
    <button class="close" title="Tutup panel">×</button>
@@ -155,8 +155,7 @@ button:disabled{opacity:.5}
  </header>
 
  <div class="body">
-  <div class="subtitle">PURPLE CYBERPUNK • OPENROUTER</div>
-
+  <div class="subtitle">PURPLE CYBERPUNK • Nurry</div>
   <div class="setting">
    <div class="line">
     <span>TRANSPARANSI</span>
@@ -167,8 +166,8 @@ button:disabled{opacity:.5}
 
   <div class="chat">
    <div class="msg ai">
-    Halo! ✦ Aku tutor belajar AI.
-    Masukkan soal latihan atau materi yang ingin kamu pahami.
+    CHEAT ON🟢 | WAYGROUND AI
+    Masukkan soal latihan atau materi
    </div>
   </div>
 
