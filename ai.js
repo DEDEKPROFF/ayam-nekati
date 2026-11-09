@@ -11,7 +11,7 @@ const root=host.attachShadow({mode:"open"});
 root.innerHTML=`
 <style>
 *{box-sizing:border-box}
-button,textarea{font:inherit}
+button,textarea,input{font:inherit}
 
 .fab{
  pointer-events:auto;position:fixed;right:13px;bottom:18px;
@@ -26,8 +26,8 @@ button,textarea{font:inherit}
 .panel{
  pointer-events:auto;display:none;position:fixed;
  right:10px;bottom:72px;
- width:min(300px,calc(100vw - 20px));
- height:min(440px,calc(100dvh - 90px));
+ width:min(320px,calc(100vw - 20px));
+ height:min(460px,calc(100dvh - 90px));
  background:rgba(10,5,20,var(--op,1));
  border:1px solid #a855f7;border-radius:15px;
  color:white;overflow:hidden;font:12px Arial;
@@ -52,8 +52,8 @@ header{
 .tools button{
  background:#35164f;color:#e9c5ff;
  border:1px solid #a855f7;
- padding:4px 9px;border-radius:6px;
- cursor:pointer;
+ padding:4px 8px;border-radius:6px;
+ cursor:pointer;font-size:12px;
 }
 
 .tools button:disabled{opacity:.5;cursor:not-allowed}
@@ -138,7 +138,33 @@ textarea:focus{
 
 button:disabled{opacity:.5}
 
-/* ── LOCK OVERLAY ── */
+/* ── SETTINGS PANEL ── */
+.settings{
+ display:none;
+ position:absolute;inset:0;z-index:9;
+ background:rgba(10,5,20,calc(var(--op,1) * .96 + .04));
+ padding:14px;gap:10px;
+ flex-direction:column;
+ backdrop-filter:blur(4px);
+}
+.settings.on{display:flex}
+.settings label{color:#c084fc;font-size:10px;letter-spacing:1px}
+.settings input[type="text"]{
+ padding:9px;background:#13091f;color:white;
+ border:1px solid #9333ea;border-radius:8px;
+ font-family:monospace;font-size:11px;outline:none;
+}
+.settings input[type="text"]:focus{border-color:#d8b4fe;box-shadow:0 0 10px #9333ea66}
+.settings .row{display:flex;gap:6px}
+.settings .row button{
+ flex:1;padding:8px;border-radius:8px;
+ background:linear-gradient(90deg,#9333ea,#4c1d95);
+ border:1px solid #c084fc;color:white;font-weight:bold;cursor:pointer;
+}
+.settings .row button.ghost{background:#241035;border-color:#6b21a8}
+.settings .hint{font-size:9px;color:#a78bfa;line-height:1.5}
+
+/* ── LOCK ── */
 .lock{
  position:absolute;inset:0;z-index:10;
  background:rgba(10,5,20,calc(var(--op,1) * .92 + .08));
@@ -147,15 +173,8 @@ button:disabled{opacity:.5}
  padding:22px 18px;gap:10px;text-align:center;
  backdrop-filter:blur(4px);
 }
-.lockTitle{
- color:#e9c5ff;font-weight:bold;font-size:14px;
- text-shadow:0 0 10px #c084fc;
- letter-spacing:1px;
-}
-.lockSub{
- color:#c084fc;font-size:9px;letter-spacing:1.5px;
- margin-bottom:4px;
-}
+.lockTitle{color:#e9c5ff;font-weight:bold;font-size:14px;text-shadow:0 0 10px #c084fc;letter-spacing:1px}
+.lockSub{color:#c084fc;font-size:9px;letter-spacing:1.5px;margin-bottom:4px}
 .keyInput{
  width:100%;padding:10px;background:#13091f;color:white;
  border:1px solid #9333ea;border-radius:8px;
@@ -180,11 +199,8 @@ button:disabled{opacity:.5}
 
 .restore{
  pointer-events:auto;position:fixed;
- right:0;bottom:0;
- width:64px;height:64px;
- background:transparent;
- display:none;
- cursor:pointer;
+ right:0;bottom:0;width:64px;height:64px;
+ background:transparent;display:none;cursor:pointer;
  -webkit-tap-highlight-color:transparent;
 }
 
@@ -192,7 +208,6 @@ button:disabled{opacity:.5}
  from{box-shadow:0 0 7px #9333ea}
  to{box-shadow:0 0 20px #c084fc,0 0 35px #7e22ce}
 }
-
 @keyframes appear{
  from{opacity:0;transform:translateY(8px) scale(.97)}
  to{opacity:1;transform:translateY(0) scale(1)}
@@ -206,6 +221,7 @@ button:disabled{opacity:.5}
   <b class="title">✦ WAYGROUND AI</b>
   <div class="tools">
    <button class="analyze" title="Analisa soal di tab ini">🔍</button>
+   <button class="settingsBtn" title="Pengaturan backend">⚙</button>
    <button class="hide" title="Sembunyikan semua">−</button>
    <button class="close" title="Tutup panel">×</button>
   </div>
@@ -222,6 +238,18 @@ button:disabled{opacity:.5}
    <div class="keyErr"></div>
   </div>
 
+  <div class="settings">
+   <label>URL BACKEND</label>
+   <input class="urlInput" type="text" placeholder="http://127.0.0.1:3000/api/chat" />
+   <div class="row">
+    <button class="saveUrl">SIMPAN</button>
+    <button class="ghost closeSettings">TUTUP</button>
+   </div>
+   <div class="hint">
+    Kalau backend di PC, ganti 127.0.0.1 dengan IP LAN PC-mu (contoh: http://192.168.1.5:3000/api/chat). Pastikan HP & PC di WiFi yang sama.
+   </div>
+  </div>
+
   <div class="subtitle">PURPLE CYBERPUNK • OPENROUTER</div>
 
   <div class="setting">
@@ -236,7 +264,7 @@ button:disabled{opacity:.5}
    <div class="msg ai">
     Halo! ✦ Aku tutor belajar AI.
     Masukkan soal latihan atau materi yang ingin kamu pahami.
-    Klik 🔍 untuk analisa soal di tab ini (pilihan ganda / isian / uraian + gambar).
+    Klik 🔍 untuk analisa soal di tab ini.
    </div>
   </div>
 
@@ -265,6 +293,12 @@ const keyInput=$(".keyInput");
 const keyBtn=$(".keyBtn");
 const keyErr=$(".keyErr");
 
+const settings=$(".settings");
+const settingsBtn=$(".settingsBtn");
+const urlInput=$(".urlInput");
+const saveUrl=$(".saveUrl");
+const closeSettings=$(".closeSettings");
+
 let history=[];
 let lastHighlighted=[];
 
@@ -273,50 +307,52 @@ let lastHighlighted=[];
    ═══════════════════════════════════════════════ */
 
 const PASSWORD="voxel";
-const STORAGE_KEY="wgai_key_ok";
+const KEY_STORAGE="wgai_key_ok";
 
 function isUnlocked(){
- try{ return localStorage.getItem(STORAGE_KEY)==="ok"; }
+ try{ return localStorage.getItem(KEY_STORAGE)==="ok"; }
  catch(_){ return false; }
 }
-
 function setUnlocked(){
- try{ localStorage.setItem(STORAGE_KEY,"ok"); }catch(_){}
+ try{ localStorage.setItem(KEY_STORAGE,"ok"); }catch(_){}
  lock.style.display="none";
  keyErr.textContent="";
 }
-
 function shakeLock(){
  lock.classList.remove("shake");
  void lock.offsetWidth;
  lock.classList.add("shake");
 }
-
 function tryUnlock(){
  const v=keyInput.value.trim().toLowerCase();
- if(v===PASSWORD){
-  setUnlocked();
- }else{
+ if(v===PASSWORD){ setUnlocked(); }
+ else{
   keyErr.textContent="❌ key salah";
   shakeLock();
   keyInput.value="";
   keyInput.focus();
  }
 }
-
 keyBtn.onclick=tryUnlock;
 keyInput.onkeydown=e=>{
  if(e.key==="Enter"){ e.preventDefault(); tryUnlock(); }
 };
-
 function updateLockState(){
- if(isUnlocked()){
-  lock.style.display="none";
- }else{
-  lock.style.display="flex";
- }
+ lock.style.display=isUnlocked()?"none":"flex";
 }
 updateLockState();
+
+/* ═══════════════════════════════════════════════
+   API URL (configurable)
+   ═══════════════════════════════════════════════ */
+
+const URL_KEY="wgai_api_url";
+const DEFAULT_URL="http://127.0.0.1:3000/api/chat";
+
+function getApiUrl(){
+ try{ return localStorage.getItem(URL_KEY)||DEFAULT_URL; }
+ catch(_){ return DEFAULT_URL; }
+}
 
 /* ═══════════════════════════════════════════════
    PANEL SHOW / HIDE
@@ -354,6 +390,27 @@ slider.oninput=()=>{
  panel.style.setProperty("--op",1-n/100);
 };
 
+/* ═══════════════════════════════════════════════
+   SETTINGS PANEL
+   ═══════════════════════════════════════════════ */
+
+settingsBtn.onclick=()=>{
+ urlInput.value=getApiUrl();
+ settings.classList.add("on");
+};
+closeSettings.onclick=()=>settings.classList.remove("on");
+saveUrl.onclick=()=>{
+ const v=urlInput.value.trim();
+ if(!v){ return; }
+ try{ localStorage.setItem(URL_KEY,v); }catch(_){}
+ settings.classList.remove("on");
+ addMessage("✓ URL backend disimpan: "+v,"ai");
+};
+
+/* ═══════════════════════════════════════════════
+   MESSAGES
+   ═══════════════════════════════════════════════ */
+
 function addMessage(text,type){
  const el=document.createElement("div");
  el.className="msg "+type;
@@ -361,6 +418,53 @@ function addMessage(text,type){
  chat.appendChild(el);
  chat.scrollTop=chat.scrollHeight;
  return el;
+}
+
+/* ═══════════════════════════════════════════════
+   FETCH AI — anti SyntaxError
+   ═══════════════════════════════════════════════ */
+
+async function fetchAI(payload){
+ const url=getApiUrl();
+
+ let response;
+ try{
+  response=await fetch(url,{
+   method:"POST",
+   headers:{ "Content-Type":"application/json" },
+   body:JSON.stringify(payload)
+  });
+ }catch(e){
+  throw new Error("Gagal konek ke "+url+" — cek backend & URL di ⚙ ("+e.message+")");
+ }
+
+ let raw="";
+ try{ raw=await response.text(); }
+ catch(e){ throw new Error("Gagal baca respons: "+e.message); }
+
+ if(!raw||!raw.trim()){
+  throw new Error(
+   "Server balas kosong (status "+response.status+"). "+
+   "Backend mungkin crash atau gak ngirim JSON. Cek log backend."
+  );
+ }
+
+ let data;
+ try{ data=JSON.parse(raw); }
+ catch(e){
+  throw new Error(
+   "Respons bukan JSON valid (status "+response.status+"): "+
+   raw.slice(0,120).replace(/\s+/g," ")
+  );
+ }
+
+ if(!response.ok){
+  throw new Error(data.error||("HTTP "+response.status));
+ }
+ if(!data.answer){
+  throw new Error("Field 'answer' kosong di respons.");
+ }
+ return String(data.answer).trim();
 }
 
 /* ═══════════════════════════════════════════════
@@ -374,48 +478,33 @@ function isVisible(el){
  const r=el.getBoundingClientRect();
  return r.width>0&&r.height>0;
 }
-
 function commonAncestor(nodes){
  if(!nodes.length)return null;
- const chain=[];
- let n=nodes[0];
+ const chain=[]; let n=nodes[0];
  while(n){ chain.push(n); n=n.parentElement; }
- for(const a of chain){
-  if(nodes.every(x=>a.contains(x)))return a;
- }
+ for(const a of chain){ if(nodes.every(x=>a.contains(x)))return a; }
  return null;
 }
-
 const NAV_WORDS=/^(home|login|sign\s*in|sign\s*up|register|menu|search|about|contact|privacy|terms|next|back|prev|previous|submit|cancel|ok|close|skip|logout|profile|settings|help)\b/i;
 function looksLikeNav(t){
  if(!t||t.length<8)return true;
  if(NAV_WORDS.test(t))return true;
  return false;
 }
-
 function getRadioLabel(r){
  let t="";
- const lbl=r.closest("label");
- if(lbl)t=lbl.innerText;
+ const lbl=r.closest("label"); if(lbl)t=lbl.innerText;
  if(!t&&r.id){
-  try{
-   const l=document.querySelector(`label[for="${CSS.escape(r.id)}"]`);
-   if(l)t=l.innerText;
-  }catch(_){}
+  try{ const l=document.querySelector(`label[for="${CSS.escape(r.id)}"]`); if(l)t=l.innerText; }catch(_){}
  }
- if(!t){
-  const p=r.parentElement;
-  if(p)t=p.innerText;
- }
+ if(!t){ const p=r.parentElement; if(p)t=p.innerText; }
  return norm(t);
 }
-
 function findPlainQuestion(){
  const selectors=[
   '[class*="question" i]','[class*="prompt" i]','[class*="stem" i]',
   '.qtext','[data-testid*="question"]',
-  'h1','h2','h3','h4','h5','[role="heading"]',
-  'p'
+  'h1','h2','h3','h4','h5','[role="heading"]','p'
  ];
  for(const s of selectors){
   for(const el of document.querySelectorAll(s)){
@@ -429,7 +518,6 @@ function findPlainQuestion(){
  }
  return null;
 }
-
 function findAnswerField(){
  const nodes=[
   ...document.querySelectorAll('textarea'),
@@ -445,7 +533,7 @@ function findAnswerField(){
 }
 
 /* ═══════════════════════════════════════════════
-   IMAGE COLLECTION
+   IMAGES
    ═══════════════════════════════════════════════ */
 
 const MAX_DATA_URL=1_500_000;
@@ -458,27 +546,20 @@ function svgToDataUrl(svgEl){
   return "data:image/svg+xml;base64,"+b64;
  }catch(_){ return ""; }
 }
-
 function absUrl(u){
  if(!u)return "";
  if(u.startsWith("data:")||u.startsWith("http://")||u.startsWith("https://"))return u;
  try{ return new URL(u,location.href).href; }catch(_){ return ""; }
 }
-
 function collectImagesNear(el, limit=4){
- const out=[];
- const seen=new Set();
-
+ const out=[]; const seen=new Set();
  const push=(src,alt)=>{
   if(!src||seen.has(src))return;
   if(src.length>MAX_DATA_URL)return;
-  seen.add(src);
-  out.push({src,alt:norm(alt)});
+  seen.add(src); out.push({src,alt:norm(alt)});
  };
-
- const scanNode=(node)=>{
+ const scan=(node)=>{
   if(!node||!node.querySelectorAll)return;
-
   for(const img of node.querySelectorAll("img")){
    if(!isVisible(img))continue;
    const r=img.getBoundingClientRect();
@@ -509,10 +590,8 @@ function collectImagesNear(el, limit=4){
    push(absUrl(m[1]),"");
   }
  };
-
- scanNode(el);
- if(el&&el.parentElement)scanNode(el.parentElement);
-
+ scan(el);
+ if(el&&el.parentElement)scan(el.parentElement);
  return out.slice(0,limit);
 }
 
@@ -522,58 +601,37 @@ function collectImagesNear(el, limit=4){
 
 function scrapeQuestion(){
 
- // ── 1. Radio MC ──
+ // radio MC
  const radios=[...document.querySelectorAll('input[type="radio"]:not([disabled])')];
  if(radios.length>=2){
-  let group=[];
-  let node=radios[0].parentElement;
+  let group=[]; let node=radios[0].parentElement;
   while(node){
    const contained=radios.filter(r=>node.contains(r));
    if(contained.length>=2&&contained.length<=10){ group=contained; break; }
    node=node.parentElement;
   }
   if(!group.length)group=radios.slice(0,8);
-
   const options=group.map(r=>({text:getRadioLabel(r),el:r})).filter(o=>o.text);
   if(options.length>=2){
    const common=commonAncestor(group);
-   let q="";
-   let cursor=common;
+   let q=""; let cursor=common;
    while(cursor&&!q){
     const prev=cursor.previousElementSibling;
-    if(prev){
-     const t=norm(prev.innerText);
-     if(t.length>5&&t.length<800)q=t;
-    }
+    if(prev){ const t=norm(prev.innerText); if(t.length>5&&t.length<800)q=t; }
     cursor=cursor.parentElement;
    }
-   if(!q){
-    const fq=findPlainQuestion();
-    if(fq)q=fq.text;
-   }
-   return {
-    question:q||"(soal tidak terdeteksi otomatis)",
-    options,kind:"radio",
-    images:collectImagesNear(common)
-   };
+   if(!q){ const fq=findPlainQuestion(); if(fq)q=fq.text; }
+   return {question:q||"(soal tidak terdeteksi otomatis)",options,kind:"radio",images:collectImagesNear(common)};
   }
  }
 
- // ── 2. Select dropdown ──
+ // select
  const selects=[...document.querySelectorAll("select")].filter(s=>isVisible(s));
  for(const sel of selects){
-  const opts=[...sel.options]
-   .filter(o=>norm(o.text).length>0&&!(o.value===""&&/^--/.test(o.text)))
-   .map(o=>({text:norm(o.text),el:o}));
+  const opts=[...sel.options].filter(o=>norm(o.text).length>0&&!(o.value===""&&/^--/.test(o.text))).map(o=>({text:norm(o.text),el:o}));
   if(opts.length<2)continue;
-
   let q="";
-  if(sel.id){
-   try{
-    const l=document.querySelector(`label[for="${CSS.escape(sel.id)}"]`);
-    if(l)q=norm(l.innerText);
-   }catch(_){}
-  }
+  if(sel.id){ try{ const l=document.querySelector(`label[for="${CSS.escape(sel.id)}"]`); if(l)q=norm(l.innerText); }catch(_){} }
   if(!q){
    let p=sel.parentElement;
    while(p&&!q){
@@ -587,28 +645,13 @@ function scrapeQuestion(){
     p=p.parentElement;
    }
   }
-  if(!q){
-   const fq=findPlainQuestion();
-   if(fq)q=fq.text;
-  }
-  return {
-   question:q||"(soal tidak terdeteksi otomatis)",
-   options:opts,kind:"select",
-   images:collectImagesNear(sel.parentElement)
-  };
+  if(!q){ const fq=findPlainQuestion(); if(fq)q=fq.text; }
+  return {question:q||"(soal tidak terdeteksi otomatis)",options:opts,kind:"select",images:collectImagesNear(sel.parentElement)};
  }
 
- // ── 3. Class-based MC ──
- const qSelectors=[
-  '[class*="question" i]','[class*="prompt" i]','[class*="stem" i]',
-  '.qtext','[data-testid*="question"]'
- ];
- const oSelectors=[
-  '[class*="answer" i]','[class*="option" i]','[class*="choice" i]',
-  '[class*="benar" i]','[class*="salah" i]',
-  '[role="radio"]','[role="option"]'
- ];
-
+ // class-based MC
+ const qSelectors=['[class*="question" i]','[class*="prompt" i]','[class*="stem" i]','.qtext','[data-testid*="question"]'];
+ const oSelectors=['[class*="answer" i]','[class*="option" i]','[class*="choice" i]','[class*="benar" i]','[class*="salah" i]','[role="radio"]','[role="option"]'];
  let qEl=null;
  for(const s of qSelectors){
   for(const el of document.querySelectorAll(s)){
@@ -617,33 +660,21 @@ function scrapeQuestion(){
   }
   if(qEl)break;
  }
-
  let oEls=[];
  for(const s of oSelectors){
   const els=[...document.querySelectorAll(s)].filter(e=>norm(e.innerText).length>0&&isVisible(e));
   if(els.length>=2&&els.length<=10){ oEls=els; break; }
  }
-
  if(qEl&&oEls.length>=2){
-  return {
-   question:norm(qEl.innerText),
-   options:oEls.map(e=>({text:norm(e.innerText),el:e})),
-   kind:"class",
-   images:collectImagesNear(qEl.parentElement)
-  };
+  return {question:norm(qEl.innerText),options:oEls.map(e=>({text:norm(e.innerText),el:e})),kind:"class",images:collectImagesNear(qEl.parentElement)};
  }
 
- // ── 4. Plain ──
+ // plain
  const plain=findPlainQuestion();
  if(plain){
   const field=findAnswerField();
-  return {
-   question:plain.text,
-   options:[],kind:"plain",field,
-   images:collectImagesNear(plain.el.parentElement)
-  };
+  return {question:plain.text,options:[],kind:"plain",field,images:collectImagesNear(plain.el.parentElement)};
  }
-
  return null;
 }
 
@@ -654,16 +685,13 @@ function scrapeQuestion(){
 function clearHighlight(){
  for(const el of lastHighlighted){
   try{
-   el.style.outline="";
-   el.style.outlineOffset="";
-   el.style.boxShadow="";
-   el.style.transition="";
+   el.style.outline=""; el.style.outlineOffset="";
+   el.style.boxShadow=""; el.style.transition="";
    el.style.borderRadius="";
   }catch(_){}
  }
  lastHighlighted=[];
 }
-
 function highlight(el){
  if(!el)return;
  try{
@@ -676,7 +704,6 @@ function highlight(el){
   el.scrollIntoView({behavior:"smooth",block:"center"});
  }catch(_){}
 }
-
 function clickOption(el){
  if(!el)return;
  try{
@@ -688,16 +715,12 @@ function clickOption(el){
   if(el.click)el.click();
  }catch(_){}
 }
-
 function fillField(field,text){
  if(!field||text==null)return false;
  try{
-  const proto=field.tagName==="TEXTAREA"
-   ?HTMLTextAreaElement.prototype
-   :HTMLInputElement.prototype;
+  const proto=field.tagName==="TEXTAREA"?HTMLTextAreaElement.prototype:HTMLInputElement.prototype;
   const desc=Object.getOwnPropertyDescriptor(proto,"value");
-  if(desc&&desc.set)desc.set.call(field,text);
-  else field.value=text;
+  if(desc&&desc.set)desc.set.call(field,text); else field.value=text;
   field.dispatchEvent(new Event("input",{bubbles:true}));
   field.dispatchEvent(new Event("change",{bubbles:true}));
   field.focus();
@@ -708,7 +731,7 @@ function fillField(field,text){
 }
 
 /* ═══════════════════════════════════════════════
-   MULTIMODAL BUILDER
+   MULTIMODAL
    ═══════════════════════════════════════════════ */
 
 function buildContent(text,images){
@@ -716,34 +739,26 @@ function buildContent(text,images){
  const parts=[{type:"text",text}];
  for(const img of images){
   if(!img.src)continue;
-  parts.push({ type:"image_url", image_url:{ url:img.src } });
+  parts.push({type:"image_url",image_url:{url:img.src}});
  }
  return parts;
 }
 
 /* ═══════════════════════════════════════════════
-   ANALISA (gated)
+   ANALISA
    ═══════════════════════════════════════════════ */
 
 async function analyze(){
  if(!isUnlocked()){
-  showPanel();
-  lock.style.display="flex";
-  shakeLock();
-  setTimeout(()=>keyInput.focus(),400);
-  return;
+  showPanel(); lock.style.display="flex"; shakeLock();
+  setTimeout(()=>keyInput.focus(),400); return;
  }
-
  if(analyzeBtn.disabled)return;
  clearHighlight();
 
  const scraped=scrapeQuestion();
  if(!scraped||!scraped.question){
-  addMessage(
-   "❌ Tidak bisa mendeteksi soal di tab ini.\n"+
-   "Pastikan teks soal (atau soal + pilihan) sedang tampil di halaman.",
-   "ai"
-  );
+  addMessage("❌ Tidak bisa mendeteksi soal di tab ini. Pastikan teks soal tampil di halaman.","ai");
   return;
  }
 
@@ -753,10 +768,9 @@ async function analyze(){
 
  const userBubble=addMessage(
   (hasChoices
-   ?`🔍 Soal terdeteksi (${scraped.options.length} pilihan):\n\n${scraped.question}\n\n`+
-    scraped.options.map((o,i)=>`${LETTERS[i]}. ${o.text}`).join("\n")
+   ?`🔍 Soal terdeteksi (${scraped.options.length} pilihan):\n\n${scraped.question}\n\n`+scraped.options.map((o,i)=>`${LETTERS[i]}. ${o.text}`).join("\n")
    :`🔍 Soal terdeteksi (tanpa pilihan):\n\n${scraped.question}`)
-  +(hasImages?`\n\n🖼 ${scraped.images.length} gambar terdeteksi di soal` : ""),
+  +(hasImages?`\n\n🖼 ${scraped.images.length} gambar terdeteksi di soal`:""),
   "user"
  );
 
@@ -764,9 +778,7 @@ async function analyze(){
   for(const img of scraped.images){
    try{
     const t=document.createElement("img");
-    t.className="thumb";
-    t.src=img.src;
-    t.alt=img.alt||"";
+    t.className="thumb"; t.src=img.src; t.alt=img.alt||"";
     userBubble.appendChild(t);
    }catch(_){}
   }
@@ -775,64 +787,47 @@ async function analyze(){
  analyzeBtn.disabled=true;
  analyzeBtn.textContent="…";
 
- const waiting=addMessage(
-  hasImages?"Menganalisa soal + gambar…":"Menganalisa soal…",
-  "ai"
- );
+ const waiting=addMessage(hasImages?"Menganalisa soal + gambar…":"Menganalisa soal…","ai");
 
  try{
   let prompt;
-
   const imgNote=hasImages
-   ?`\n\nCATATAN: Soal ini menyertakan ${scraped.images.length} gambar. Amati setiap gambar terlampir dengan teliti, sebutkan secara singkat apa isi/gambarnya, lalu gunakan informasinya untuk menjawab.`
+   ?`\n\nCATATAN: Soal ini menyertakan ${scraped.images.length} gambar. Amati gambar terlampir, sebutkan singkat isinya, lalu gunakan informasinya untuk menjawab.`
    :"";
 
   if(hasChoices){
    const optBlock=scraped.options.map((o,i)=>`${LETTERS[i]}. ${o.text}`).join("\n");
    prompt=
-    `Kamu adalah asisten yang menganalisa soal pilihan ganda.\n`+
-    `Tentukan jawaban yang paling benar.\n\n`+
-    `SOAL:\n${scraped.question}\n\n`+
-    `PILIHAN:\n${optBlock}`+
-    imgNote+
-    `\n\nJawab dengan format persis:\n`+
-    `GAMBAR: <deskripsi singkat gambar, atau "-" jika tidak ada>\n`+
-    `JAWABAN: <satu huruf>\n`+
-    `ALASAN: <penjelasan singkat 1-2 kalimat>`;
+    `Kamu asisten analisa soal pilihan ganda.\nTentukan jawaban paling benar.\n\n`+
+    `SOAL:\n${scraped.question}\n\nPILIHAN:\n${optBlock}`+imgNote+
+    `\n\nFormat persis:\nGAMBAR: <deskripsi / "-">\nJAWABAN: <satu huruf>\nALASAN: <1-2 kalimat>`;
   }else{
    prompt=
-    `Kamu adalah asisten yang menjawab soal.\n`+
-    `Soal berikut adalah soal isian/uraian (BUKAN pilihan ganda).\n`+
-    `Tentukan jawaban yang paling benar.\n\n`+
-    `SOAL:\n${scraped.question}`+
-    imgNote+
-    `\n\nJawab dengan format persis:\n`+
-    `GAMBAR: <deskripsi singkat gambar, atau "-" jika tidak ada>\n`+
-    `JAWABAN: <jawaban singkat yang benar>\n`+
-    `PENJELASAN: <penjelasan 1-2 kalimat>`;
+    `Kamu asisten menjawab soal isian/uraian.\nTentukan jawaban paling benar.\n\n`+
+    `SOAL:\n${scraped.question}`+imgNote+
+    `\n\nFormat persis:\nGAMBAR: <deskripsi / "-">\nJAWABAN: <jawaban singkat>\nPENJELASAN: <1-2 kalimat>`;
   }
 
-  const body={
-   messages:[{
-    role:"user",
-    content:buildContent(prompt,scraped.images||[])
-   }]
-  };
+  let ans=null;
+  let usedVision=hasImages;
 
-  const response=await fetch(
-   "http://127.0.0.1:3000/api/chat",
-   {
-    method:"POST",
-    headers:{ "Content-Type":"application/json" },
-    body:JSON.stringify(body)
+  // 1) coba dengan gambar (kalau ada)
+  if(hasImages){
+   try{
+    ans=await fetchAI({messages:[{role:"user",content:buildContent(prompt,scraped.images)}]});
+   }catch(e){
+    // 2) fallback: teks saja
+    waiting.textContent="Gagal kirim gambar ("+e.message+"). Mencoba tanpa gambar…";
+    usedVision=false;
+    const textPrompt=
+     prompt+
+     `\n\n(Catatan sistem: gambar gagal dikirim ke model. Jawab berdasarkan teks soal saja.)`;
+    ans=await fetchAI({messages:[{role:"user",content:textPrompt}]});
    }
-  );
+  }else{
+   ans=await fetchAI({messages:[{role:"user",content:prompt}]});
+  }
 
-  const data=await response.json();
-  if(!response.ok)throw new Error(data.error||"Request gagal");
-  if(!data.answer)throw new Error("Jawaban AI kosong");
-
-  const ans=String(data.answer).trim();
   waiting.textContent=ans;
 
   if(hasChoices){
@@ -843,15 +838,11 @@ async function analyze(){
     if(idx>=0&&idx<scraped.options.length){
      const chosen=scraped.options[idx];
      highlight(chosen.el);
-
-     const wrap=document.createElement("div");
-     wrap.style.marginTop="6px";
+     const wrap=document.createElement("div"); wrap.style.marginTop="6px";
      const btn=document.createElement("button");
-     btn.className="pick";
-     btn.textContent=`✓ Pilih ${letter}`;
+     btn.className="pick"; btn.textContent=`✓ Pilih ${letter}`;
      btn.onclick=()=>clickOption(chosen.el);
-     wrap.appendChild(btn);
-     waiting.appendChild(wrap);
+     wrap.appendChild(btn); waiting.appendChild(wrap);
      chat.scrollTop=chat.scrollHeight;
     }
    }
@@ -860,17 +851,14 @@ async function analyze(){
    let shortText=null;
    if(mj)shortText=mj[1].trim().replace(/^["'`]|["'`]$/g,"");
    if(shortText&&scraped.field){
-    const wrap=document.createElement("div");
-    wrap.style.marginTop="6px";
+    const wrap=document.createElement("div"); wrap.style.marginTop="6px";
     const btn=document.createElement("button");
-    btn.className="pick";
-    btn.textContent=`✓ Isi jawaban ke kolom`;
+    btn.className="pick"; btn.textContent=`✓ Isi jawaban ke kolom`;
     btn.onclick=()=>{
      const ok=fillField(scraped.field,shortText);
      if(ok)highlight(scraped.field);
     };
-    wrap.appendChild(btn);
-    waiting.appendChild(wrap);
+    wrap.appendChild(btn); waiting.appendChild(wrap);
     chat.scrollTop=chat.scrollHeight;
    }
   }
@@ -887,16 +875,13 @@ async function analyze(){
 analyzeBtn.onclick=analyze;
 
 /* ═══════════════════════════════════════════════
-   CHAT BIASA (gated)
+   CHAT BIASA
    ═══════════════════════════════════════════════ */
 
 async function ask(){
  if(!isUnlocked()){
-  showPanel();
-  lock.style.display="flex";
-  shakeLock();
-  setTimeout(()=>keyInput.focus(),400);
-  return;
+  showPanel(); lock.style.display="flex"; shakeLock();
+  setTimeout(()=>keyInput.focus(),400); return;
  }
 
  const text=input.value.trim();
@@ -904,8 +889,7 @@ async function ask(){
 
  input.value="";
  addMessage(text,"user");
-
- history.push({ role:"user", content:text });
+ history.push({role:"user",content:text});
  history=history.slice(-10);
 
  send.disabled=true;
@@ -914,28 +898,13 @@ async function ask(){
  const waiting=addMessage("Sedang berpikir...","ai");
 
  try{
-  const response=await fetch(
-   "http://127.0.0.1:3000/api/chat",
-   {
-    method:"POST",
-    headers:{ "Content-Type":"application/json" },
-    body:JSON.stringify({ messages:history })
-   }
-  );
-
-  const data=await response.json();
-  if(!response.ok)throw new Error(data.error||"Request gagal");
-  if(!data.answer)throw new Error("Jawaban AI kosong");
-
-  waiting.textContent=data.answer;
-
-  history.push({ role:"assistant", content:data.answer });
+  const ans=await fetchAI({messages:history});
+  waiting.textContent=ans;
+  history.push({role:"assistant",content:ans});
   history=history.slice(-10);
-
  }catch(error){
   waiting.textContent="Error: "+error.message;
   history.pop();
-
  }finally{
   send.disabled=false;
   send.textContent="✦ KIRIM PESAN";
@@ -944,19 +913,18 @@ async function ask(){
 }
 
 send.onclick=ask;
-
 input.onkeydown=e=>{
  if(e.key==="Enter"&&(e.ctrlKey||e.metaKey)){
-  e.preventDefault();
-  ask();
+  e.preventDefault(); ask();
  }
 };
 
-// DRAG
+/* ═══════════════════════════════════════════════
+   DRAG
+   ═══════════════════════════════════════════════ */
+
 const header=$("header");
-let dragging=false;
-let offsetX=0;
-let offsetY=0;
+let dragging=false,offsetX=0,offsetY=0;
 
 header.onpointerdown=e=>{
  if(e.target.closest("button"))return;
@@ -966,19 +934,15 @@ header.onpointerdown=e=>{
  offsetY=e.clientY-rect.top;
  header.setPointerCapture(e.pointerId);
 };
-
 header.onpointermove=e=>{
  if(!dragging)return;
  const maxX=window.innerWidth-panel.offsetWidth;
  const maxY=window.innerHeight-panel.offsetHeight;
  const x=Math.max(0,Math.min(maxX,e.clientX-offsetX));
  const y=Math.max(0,Math.min(maxY,e.clientY-offsetY));
- panel.style.left=x+"px";
- panel.style.top=y+"px";
- panel.style.right="auto";
- panel.style.bottom="auto";
+ panel.style.left=x+"px"; panel.style.top=y+"px";
+ panel.style.right="auto"; panel.style.bottom="auto";
 };
-
 header.onpointerup=()=>{ dragging=false; };
 header.onpointercancel=()=>{ dragging=false; };
 
